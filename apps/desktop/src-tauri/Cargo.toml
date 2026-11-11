@@ -26,4 +26,4 @@ wmux-process-manager = { path = "../../../crates/process-manager" }
 wmux-session-manager = { path = "../../../crates/session-manager" }
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52"
+winreg = "0.56"
