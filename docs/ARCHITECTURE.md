@@ -89,7 +89,7 @@ splits/tabs ("open here") and restore.
 | Concurrent async IPC reorders keystrokes | Per-terminal serialized input queue in the frontend. |
 | WebView2 browser shortcuts (F5, Ctrl+R, Ctrl+P…) | Prevented outside terminals; inside terminals xterm consumes them for the shell. |
 | Shortcuts stealing shell keys (Ctrl+D EOF, Ctrl+W, Ctrl+R) | App shortcuts use Ctrl+Shift / Ctrl+Alt; enforced by a unit test. |
-| Smart App Control blocks locally compiled binaries | Documented; CI on `windows-latest` builds, tests and packages. Rollup uses its official WASM build (`@rollup/wasm-node`) so frontend tooling runs under SAC. |
+| Smart App Control blocks locally compiled binaries | Documented; CI on `windows-latest` builds, tests and packages. `rustfmt.exe` can be run directly from the toolchain; frontend tooling (Vite 8 / Rolldown) runs under SAC. |
 | WebView2 in arbitrary split panes (future browser surfaces) | Planned: a native child `ICoreWebView2Controller` per browser surface, positioned from pane bounds reported by the UI. No iframes, no screenshots. |
 | Single instance & DB contention | `tauri-plugin-single-instance` focuses the running window. |
 
