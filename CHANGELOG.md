@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased): Milestone 1
+## 0.1.0 (2026-11-11): Milestone 1, early preview
 
 - ConPTY terminal engine with Job Object process-tree management.
 - Shell detection: PowerShell 7, Windows PowerShell, cmd, WSL, Git Bash, custom profiles.

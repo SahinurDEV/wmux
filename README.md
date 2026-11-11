@@ -8,13 +8,14 @@
 
 Workspaces · recursive split panes · real ConPTY shells · session restore
 
+[![Download](https://img.shields.io/github/v/release/SahinurDEV/wmux?include_prereleases&label=download&color=7c8cff)](https://github.com/SahinurDEV/wmux/releases/latest)
 [![CI](https://github.com/SahinurDEV/wmux/actions/workflows/ci.yml/badge.svg)](https://github.com/SahinurDEV/wmux/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4)
 ![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-24C8DB)
 ![Status: early development](https://img.shields.io/badge/status-early%20development-orange)
 
-[Features](#features-today) · [Install](#install) · [Build from source](#build-from-source) · [Roadmap](docs/PROGRESS.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
+[**Download**](https://github.com/SahinurDEV/wmux/releases/latest) · [Features](#features-today) · [Install](#install) · [Build from source](#build-from-source) · [Roadmap](docs/PROGRESS.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -73,11 +74,40 @@ changed under **Settings > Keyboard**.
 
 ## Install
 
-Download the NSIS installer, MSI or portable ZIP from the CI artifacts or
-GitHub Releases. Requirements: Windows 10 (1809+) or Windows 11 on x64, and the
-Microsoft Edge WebView2 runtime (preinstalled on Windows 11; the installer
-downloads it if missing). The portable ZIP needs WebView2 already installed and
-stores its data in `%APPDATA%\dev.wmux.desktop` unless `WMUX_DATA_DIR` is set.
+**[Download the latest release](https://github.com/SahinurDEV/wmux/releases/latest)** and pick one:
+
+| File | Use it if |
+| --- | --- |
+| `Wmux_<version>_x64-setup.exe` | **Recommended.** Per-user installer, no admin rights needed. |
+| `Wmux_<version>_x64_en-US.msi` | You deploy software with MSI / Group Policy. |
+| `Wmux-portable-x64.zip` | You want no installation; unzip and run `Wmux.exe`. |
+
+Every release includes `SHA256SUMS.txt`. Verify a download with:
+
+```powershell
+Get-FileHash .\Wmux_0.1.0_x64-setup.exe -Algorithm SHA256
+```
+
+**Requirements:** Windows 10 (1809+) or Windows 11, x64, and the Microsoft Edge
+WebView2 runtime. It is built into Windows 11; the installer downloads it on
+Windows 10 if it is missing. The portable ZIP stores data in
+`%APPDATA%\dev.wmux.desktop` unless `WMUX_DATA_DIR` is set.
+
+> **Unsigned builds:** Wmux is not code-signed yet, so SmartScreen may show
+> "Windows protected your PC". Choose **More info → Run anyway**. Windows 11
+> Smart App Control blocks unsigned apps entirely; code signing is on the roadmap.
+
+Development builds from every commit are available as artifacts on the
+[CI workflow runs](https://github.com/SahinurDEV/wmux/actions/workflows/ci.yml).
+
+### Publishing a release (maintainers)
+
+1. Bump the version in `apps/desktop/src-tauri/tauri.conf.json`,
+   `apps/desktop/package.json` and `Cargo.toml`, and update `CHANGELOG.md`.
+2. `git tag vX.Y.Z && git push origin vX.Y.Z`
+
+The [release workflow](.github/workflows/release.yml) runs the tests, builds
+the installers, and publishes them with a portable ZIP and checksums.
 
 ## Build from source
 

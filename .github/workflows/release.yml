@@ -1,17 +1,41 @@
 name: Release
 
+# Publishing a release:
+#   1. Bump the version in apps/desktop/src-tauri/tauri.conf.json, apps/desktop/package.json
+#      and Cargo.toml ([workspace.package] version), and update CHANGELOG.md.
+#   2. git tag vX.Y.Z && git push origin vX.Y.Z
+# The workflow tests, builds, and publishes the installers, a portable ZIP and
+# SHA-256 checksums to a GitHub Release. It can also be re-run manually.
+
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.1.0"
+        required: true
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
 jobs:
   release:
+    name: Build and publish (Windows x64)
     runs-on: windows-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -19,14 +43,71 @@ jobs:
           cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: pnpm install --frozen-lockfile
-      - uses: tauri-apps/tauri-action@v0
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check tag matches app version
+        shell: pwsh
+        run: |
+          $version = (Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne $env:TAG) {
+            throw "Tag $env:TAG does not match tauri.conf.json version $version"
+          }
+
+      - name: Tests
+        run: |
+          pnpm --filter @wmux/desktop typecheck
+          pnpm --filter @wmux/desktop test
+          cargo test --workspace
+
+      - name: Build installers and create release
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: Wmux ${{ github.ref_name }}
-          releaseBody: See CHANGELOG.md for details.
-          releaseDraft: true
-          prerelease: true
+          tauriScript: pnpm tauri
+          tagName: ${{ env.TAG }}
+          releaseName: Wmux ${{ env.TAG }}${{ startsWith(env.TAG, 'v0.') && ' (early preview)' || '' }}
+          releaseBody: |
+            ## Download
+
+            | File | Use it if |
+            | --- | --- |
+            | `Wmux_*_x64-setup.exe` | **Recommended.** Per-user installer, no admin rights needed. |
+            | `Wmux_*_x64_en-US.msi` | You deploy software with MSI / Group Policy. |
+            | `Wmux-portable-x64.zip` | You want no installation. Requires the WebView2 runtime (built into Windows 11). |
+
+            Verify downloads against `SHA256SUMS.txt`.
+
+            > Wmux is not code-signed yet, so Windows SmartScreen may show "Windows protected your PC".
+            > Click **More info → Run anyway**. Smart App Control may block unsigned apps entirely.
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ env.TAG }}/CHANGELOG.md) for what's new.
+          releaseDraft: false
+          # Not marked as pre-release so /releases/latest (the README download link) resolves.
+          prerelease: false
+
+      - name: Portable ZIP and checksums
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $out = "target/release/portable/Wmux"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Copy-Item target/release/wmux-desktop.exe "$out/Wmux.exe"
+          Copy-Item LICENSE, README.md $out
+          $zip = "target/release/Wmux-portable-x64.zip"
+          Compress-Archive -Path "$out/*" -DestinationPath $zip -Force
+
+          $files = @(Get-ChildItem target/release/bundle/nsis/*.exe) +
+                   @(Get-ChildItem target/release/bundle/msi/*.msi) +
+                   @(Get-Item $zip)
+          $sums = $files | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          }
+          $sums | Set-Content -Encoding ascii target/release/SHA256SUMS.txt
+          $sums
+
+          gh release upload $env:TAG $zip target/release/SHA256SUMS.txt --clobber --repo ${{ github.repository }}
