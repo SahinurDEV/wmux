@@ -1,0 +1,16 @@
+[package]
+name = "wmux-session-manager"
+description = "SQLite persistence for Wmux workspaces, layouts, terminal sessions and settings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,12 @@
+[package]
+name = "wmux-process-manager"
+description = "Owns ConPTY sessions: I/O threads, lifecycle, resize, and process-tree termination"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+wmux-conpty = { path = "../conpty" }
+thiserror.workspace = true
+log.workspace = true
+serde.workspace = true

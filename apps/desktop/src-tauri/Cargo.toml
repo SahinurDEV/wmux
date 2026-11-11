@@ -1,0 +1,29 @@
+[package]
+name = "wmux-desktop"
+description = "Wmux desktop application (Tauri 2)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+default-run = "wmux-desktop"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+thiserror.workspace = true
+base64 = "0.22"
+wmux-process-manager = { path = "../../../crates/process-manager" }
+wmux-session-manager = { path = "../../../crates/session-manager" }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"

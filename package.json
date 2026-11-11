@@ -1,0 +1,20 @@
+{
+  "name": "wmux-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter @wmux/desktop tauri dev",
+    "build": "pnpm --filter @wmux/desktop tauri build",
+    "test": "pnpm --filter @wmux/desktop test && cargo test --workspace",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "typecheck": "pnpm --filter @wmux/desktop typecheck"
+  },
+  "pnpm": {
+    "overrides": {
+      "rollup": "npm:@rollup/wasm-node@^4.30.0"
+    }
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

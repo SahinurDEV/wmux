@@ -1,0 +1,162 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+/* Theme tokens. Components only use these semantic colors. */
+:root,
+:root[data-theme="dark"] {
+  --wm-bg: #0b0d12;
+  --wm-panel: #10131a;
+  --wm-surface: #0e1015;
+  --wm-elev: #171b24;
+  --wm-hover: #1b202b;
+  --wm-active: #222837;
+  --wm-line: #212633;
+  --wm-line-strong: #2d3343;
+  --wm-fg: #d9dce4;
+  --wm-muted: #8a90a2;
+  --wm-faint: #596074;
+  --wm-danger: #f7768e;
+  --wm-success: #9ece6a;
+  --wm-warning: #e0af68;
+  --wm-accent: #7c8cff;
+  --wm-shadow: 0 12px 40px rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --wm-bg: #eef0f4;
+  --wm-panel: #e7e9ef;
+  --wm-surface: #fbfbfc;
+  --wm-elev: #ffffff;
+  --wm-hover: #dde1e9;
+  --wm-active: #d3d8e3;
+  --wm-line: #d6dae3;
+  --wm-line-strong: #c3c8d4;
+  --wm-fg: #1f2330;
+  --wm-muted: #5c6273;
+  --wm-faint: #8a90a2;
+  --wm-danger: #c4384b;
+  --wm-success: #3d7a1f;
+  --wm-warning: #8f6a00;
+  --wm-shadow: 0 12px 40px rgb(20 24 40 / 0.18);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--wm-bg);
+  --color-panel: var(--wm-panel);
+  --color-surface: var(--wm-surface);
+  --color-elev: var(--wm-elev);
+  --color-hover: var(--wm-hover);
+  --color-active: var(--wm-active);
+  --color-line: var(--wm-line);
+  --color-line-strong: var(--wm-line-strong);
+  --color-fg: var(--wm-fg);
+  --color-muted: var(--wm-muted);
+  --color-faint: var(--wm-faint);
+  --color-danger: var(--wm-danger);
+  --color-success: var(--wm-success);
+  --color-warning: var(--wm-warning);
+  --color-accent: var(--wm-accent);
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--wm-bg);
+  color: var(--wm-fg);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+input,
+textarea,
+select {
+  user-select: text;
+}
+
+/* In the base layer so utilities (e.g. focus-visible:outline-none) can override it. */
+@layer base {
+  *:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--wm-accent) 70%, transparent);
+    outline-offset: 1px;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--wm-fg) 14%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--wm-fg) 24%, transparent);
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Terminal host fills its pane; padding keeps glyphs off the border. */
+.wmux-term-host {
+  position: absolute;
+  inset: 0;
+  padding: 6px 2px 2px 10px;
+  background: var(--wm-surface);
+}
+.wmux-term-host .xterm {
+  height: 100%;
+}
+.wmux-term-host .xterm-viewport {
+  background-color: transparent !important;
+}
+
+/* Resize handles for react-resizable-panels */
+.wm-resize-handle {
+  position: relative;
+  background: var(--wm-line);
+  transition: background-color 120ms;
+}
+.wm-resize-handle[data-panel-group-direction="horizontal"] {
+  width: 1px;
+}
+.wm-resize-handle[data-panel-group-direction="vertical"] {
+  height: 1px;
+}
+.wm-resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 10;
+}
+.wm-resize-handle[data-resize-handle-state="hover"],
+.wm-resize-handle[data-resize-handle-state="drag"] {
+  background: var(--wm-accent);
+}
+
+.wm-kbd {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--wm-line-strong);
+  color: var(--wm-muted);
+  background: var(--wm-panel);
+}
