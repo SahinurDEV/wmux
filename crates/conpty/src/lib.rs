@@ -43,7 +43,10 @@ impl PtySize {
 
 impl Default for PtySize {
     fn default() -> Self {
-        Self { cols: 120, rows: 30 }
+        Self {
+            cols: 120,
+            rows: 30,
+        }
     }
 }
 

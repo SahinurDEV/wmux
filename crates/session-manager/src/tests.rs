@@ -89,7 +89,9 @@ fn removed_entities_are_deleted_and_runtime_columns_survive() {
         ..Default::default()
     };
     store.save_snapshot(&snap).unwrap();
-    store.record_terminal_started("s1", 4242, "pwsh.exe").unwrap();
+    store
+        .record_terminal_started("s1", 4242, "pwsh.exe")
+        .unwrap();
     store.record_terminal_exited("s1", Some(0)).unwrap();
 
     // Remove s2 and save again.
@@ -118,14 +120,19 @@ fn removed_entities_are_deleted_and_runtime_columns_survive() {
 fn terminal_started_before_first_save_is_still_recorded() {
     let mut store = Store::open_in_memory().unwrap();
     // Backend records the run before the UI's debounced save created the row.
-    store.record_terminal_started("early", 77, "cmd.exe").unwrap();
+    store
+        .record_terminal_started("early", 77, "cmd.exe")
+        .unwrap();
     let snap = SessionSnapshot {
         workspaces: vec![workspace("w", vec![pane("p", &["early"])])],
         ..Default::default()
     };
     store.save_snapshot(&snap).unwrap();
     let loaded = store.load_snapshot().unwrap();
-    let run = loaded.workspaces[0].panes[0].surfaces[0].last_run.clone().unwrap();
+    let run = loaded.workspaces[0].panes[0].surfaces[0]
+        .last_run
+        .clone()
+        .unwrap();
     assert_eq!(run.pid, Some(77));
     assert_eq!(run.program.as_deref(), Some("cmd.exe"));
 }
@@ -157,7 +164,10 @@ fn invalid_snapshots_are_rejected() {
         workspaces: vec![workspace("w", vec![pane("p", &["x", "x"])])],
         ..Default::default()
     };
-    assert!(matches!(store.save_snapshot(&dup), Err(StoreError::Invalid(_))));
+    assert!(matches!(
+        store.save_snapshot(&dup),
+        Err(StoreError::Invalid(_))
+    ));
     let mut bad_kind = SessionSnapshot {
         workspaces: vec![workspace("w", vec![pane("p", &["x"])])],
         ..Default::default()
@@ -175,7 +185,10 @@ fn settings_roundtrip() {
     ]);
     store.set_settings(&values).unwrap();
     store
-        .set_settings(&BTreeMap::from([("terminal.fontSize".to_string(), json!(15))]))
+        .set_settings(&BTreeMap::from([(
+            "terminal.fontSize".to_string(),
+            json!(15),
+        )]))
         .unwrap();
     let got = store.get_settings().unwrap();
     assert_eq!(got["appearance.theme"], json!("dark"));
@@ -186,7 +199,11 @@ fn settings_roundtrip() {
 fn corrupt_database_is_moved_aside_and_recreated() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("wmux.db");
-    std::fs::write(&path, b"this is definitely not a sqlite database, just garbage bytes......").unwrap();
+    std::fs::write(
+        &path,
+        b"this is definitely not a sqlite database, just garbage bytes......",
+    )
+    .unwrap();
     let (store, outcome) = Store::open(&path).unwrap();
     assert_eq!(store.schema_version().unwrap(), 1);
     let aside = outcome.recovered_from.expect("recovered");

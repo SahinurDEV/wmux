@@ -21,8 +21,8 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub use wmux_conpty::{CommandSpec, PtySize};
 use wmux_conpty::{spawn as spawn_pty, Pty};
+pub use wmux_conpty::{CommandSpec, PtySize};
 
 /// Events emitted by a session, in order.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -143,7 +143,11 @@ impl ProcessManager {
             .name(format!("pty-writer-{short_id}"))
             .spawn(move || {
                 for data in rx {
-                    if writer.write_all(&data).and_then(|_| writer.flush()).is_err() {
+                    if writer
+                        .write_all(&data)
+                        .and_then(|_| writer.flush())
+                        .is_err()
+                    {
                         break;
                     }
                 }

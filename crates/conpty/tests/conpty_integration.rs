@@ -96,7 +96,9 @@ fn interactive_input_reaches_the_shell() {
     let spec = CommandSpec::new("cmd.exe").args(["/d", "/q"]);
     let (pty, reader, mut writer) = spawn(&spec, PtySize::new(80, 25)).expect("spawn");
     let out = collect(reader);
-    writer.write_all(b"echo typed-%COMPUTERNAME:~0,0%input\r").unwrap();
+    writer
+        .write_all(b"echo typed-%COMPUTERNAME:~0,0%input\r")
+        .unwrap();
     writer.write_all(b"exit 5\r").unwrap();
     let code = pty.wait().expect("wait");
     pty.close_console();
@@ -120,7 +122,9 @@ fn environment_and_cwd_are_applied() {
     assert!(text.contains("[hello-env]"), "output was: {text:?}");
     let dir_str = dir.to_string_lossy().trim_end_matches('\\').to_lowercase();
     assert!(
-        text.to_lowercase().replace(['\r', '\n'], "").contains(&dir_str),
+        text.to_lowercase()
+            .replace(['\r', '\n'], "")
+            .contains(&dir_str),
         "cwd {dir_str:?} not in {text:?}"
     );
 }
@@ -152,7 +156,9 @@ fn kill_terminates_the_process_tree() {
     assert!(pty.try_wait().is_none(), "process should still be running");
     let started = Instant::now();
     pty.kill().expect("kill");
-    let code = pty.wait_timeout(Duration::from_secs(5)).expect("exited after kill");
+    let code = pty
+        .wait_timeout(Duration::from_secs(5))
+        .expect("exited after kill");
     assert_eq!(code, 1);
     assert!(started.elapsed() < Duration::from_secs(5));
     pty.close_console();

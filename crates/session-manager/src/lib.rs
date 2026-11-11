@@ -210,7 +210,9 @@ impl Store {
         configure(&conn)?;
         let check: String = conn.query_row("PRAGMA quick_check", [], |r| r.get(0))?;
         if check != "ok" {
-            return Err(StoreError::Invalid(format!("integrity check failed: {check}")));
+            return Err(StoreError::Invalid(format!(
+                "integrity check failed: {check}"
+            )));
         }
         migrate(&mut conn)?;
         Ok(Self {
@@ -248,7 +250,11 @@ impl Store {
 
         for (pos, ws) in snap.workspaces.iter().enumerate() {
             ws_ids.push(ws.id.clone());
-            let created = if ws.created_at > 0 { ws.created_at } else { now };
+            let created = if ws.created_at > 0 {
+                ws.created_at
+            } else {
+                now
+            };
             tx.execute(
                 "INSERT INTO workspaces (id, name, color, icon, cwd, pinned, position, layout_json,
                     focused_pane_id, shell_profile_id, startup_commands_json, env_json, created_at, updated_at)
@@ -361,7 +367,9 @@ impl Store {
             rows
         {
             let pane_rows = pane_stmt
-                .query_map([&id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?)))?
+                .query_map([&id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                })?
                 .collect::<rusqlite::Result<Vec<_>>>()?;
             let mut panes = Vec::new();
             for (pane_id, active) in pane_rows {
@@ -420,7 +428,11 @@ impl Store {
     fn get_state<T: serde::de::DeserializeOwned>(&self, key: &str) -> Result<Option<T>> {
         let raw: Option<String> = self
             .conn
-            .query_row("SELECT value_json FROM app_state WHERE key = ?1", [key], |r| r.get(0))
+            .query_row(
+                "SELECT value_json FROM app_state WHERE key = ?1",
+                [key],
+                |r| r.get(0),
+            )
             .optional()?;
         raw.map(|s| json_col("app_state", &s)).transpose()
     }
@@ -559,7 +571,10 @@ pub fn validate(snap: &SessionSnapshot) -> Result<()> {
             for s in &pane.surfaces {
                 check_id(&s.id, "surface")?;
                 if s.kind != "terminal" && s.kind != "browser" {
-                    return Err(StoreError::Invalid(format!("unknown surface kind {}", s.kind)));
+                    return Err(StoreError::Invalid(format!(
+                        "unknown surface kind {}",
+                        s.kind
+                    )));
                 }
             }
         }

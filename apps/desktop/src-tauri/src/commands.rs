@@ -169,9 +169,16 @@ pub async fn pty_spawn(
 ) -> CmdResult<SpawnResult> {
     let profiles = shells::detect(&custom_profiles(&state));
     let profile = match &request.profile_id {
-        Some(id) => profiles.iter().find(|p| &p.id == id).cloned().ok_or_else(|| {
-            CmdError::new("profileNotFound", format!("shell profile '{id}' is not available"))
-        })?,
+        Some(id) => profiles
+            .iter()
+            .find(|p| &p.id == id)
+            .cloned()
+            .ok_or_else(|| {
+                CmdError::new(
+                    "profileNotFound",
+                    format!("shell profile '{id}' is not available"),
+                )
+            })?,
         None => profiles
             .first()
             .cloned()
@@ -200,7 +207,10 @@ pub async fn pty_spawn(
         .env("TERM", "xterm-256color")
         .env("COLORTERM", "truecolor")
         .env("TERM_PROGRAM", "Wmux")
-        .env("TERM_PROGRAM_VERSION", app.package_info().version.to_string())
+        .env(
+            "TERM_PROGRAM_VERSION",
+            app.package_info().version.to_string(),
+        )
         .env("WMUX_SURFACE_ID", &request.surface_id)
         .env("WMUX_WORKSPACE_ID", &request.workspace_id);
     for (k, v) in launch.extra_env {
@@ -209,7 +219,10 @@ pub async fn pty_spawn(
     for (k, v) in &request.env {
         validate_env_key(k)?;
         if v.contains('\0') {
-            return Err(CmdError::new("invalidRequest", format!("value of {k} contains NUL")));
+            return Err(CmdError::new(
+                "invalidRequest",
+                format!("value of {k} contains NUL"),
+            ));
         }
         spec = spec.env(k, v);
     }
@@ -230,7 +243,9 @@ pub async fn pty_spawn(
                 }
             }
             let mut msg = vec![TAG_EXIT];
-            msg.extend(serde_json::to_vec(&serde_json::json!({ "code": code })).unwrap_or_default());
+            msg.extend(
+                serde_json::to_vec(&serde_json::json!({ "code": code })).unwrap_or_default(),
+            );
             let _ = on_event.send(Response::new(msg));
         }
     });
@@ -248,7 +263,8 @@ pub async fn pty_spawn(
         request.surface_id
     );
     if let Ok(s) = state.store.lock() {
-        if let Err(e) = s.record_terminal_started(&request.surface_id, session.pid, &profile.program)
+        if let Err(e) =
+            s.record_terminal_started(&request.surface_id, session.pid, &profile.program)
         {
             log::warn!("failed to record start: {e}");
         }
@@ -268,12 +284,21 @@ pub async fn pty_write(state: State<'_, AppState>, id: String, data: String) -> 
 }
 
 #[tauri::command]
-pub async fn pty_write_binary(state: State<'_, AppState>, id: String, data: Vec<u8>) -> CmdResult<()> {
+pub async fn pty_write_binary(
+    state: State<'_, AppState>,
+    id: String,
+    data: Vec<u8>,
+) -> CmdResult<()> {
     Ok(state.processes.write(&id, data)?)
 }
 
 #[tauri::command]
-pub async fn pty_resize(state: State<'_, AppState>, id: String, cols: u16, rows: u16) -> CmdResult<()> {
+pub async fn pty_resize(
+    state: State<'_, AppState>,
+    id: String,
+    cols: u16,
+    rows: u16,
+) -> CmdResult<()> {
     Ok(state.processes.resize(&id, PtySize::new(cols, rows))?)
 }
 

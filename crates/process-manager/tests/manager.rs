@@ -5,7 +5,10 @@ use std::time::Duration;
 
 use wmux_process_manager::{CommandSpec, ProcessError, ProcessManager, PtySize, SessionEvent};
 
-fn sink() -> (wmux_process_manager::EventSink, mpsc::Receiver<SessionEvent>) {
+fn sink() -> (
+    wmux_process_manager::EventSink,
+    mpsc::Receiver<SessionEvent>,
+) {
     let (tx, rx) = mpsc::channel();
     let tx = std::sync::Mutex::new(tx);
     (
@@ -32,7 +35,12 @@ fn interactive_session_roundtrip_and_exit_event_after_output() {
     let pm = ProcessManager::new();
     let (s, rx) = sink();
     let info = pm
-        .spawn("t1", &CommandSpec::new("cmd.exe").args(["/d", "/q"]), PtySize::new(80, 24), s)
+        .spawn(
+            "t1",
+            &CommandSpec::new("cmd.exe").args(["/d", "/q"]),
+            PtySize::new(80, 24),
+            s,
+        )
         .unwrap();
     assert!(info.running && info.pid > 0);
     pm.write("t1", b"echo pm-roundtrip\r".to_vec()).unwrap();
@@ -43,15 +51,23 @@ fn interactive_session_roundtrip_and_exit_event_after_output() {
     let info = pm.info("t1").unwrap();
     assert!(!info.running);
     assert_eq!(info.exit_code, Some(9));
-    assert!(matches!(pm.write("t1", b"x".to_vec()), Err(ProcessError::Exited(_))));
+    assert!(matches!(
+        pm.write("t1", b"x".to_vec()),
+        Err(ProcessError::Exited(_))
+    ));
 }
 
 #[test]
 fn duplicate_running_id_is_rejected_but_restart_after_exit_works() {
     let pm = ProcessManager::new();
     let (s1, rx1) = sink();
-    pm.spawn("dup", &CommandSpec::new("cmd.exe").args(["/d", "/q"]), PtySize::default(), s1)
-        .unwrap();
+    pm.spawn(
+        "dup",
+        &CommandSpec::new("cmd.exe").args(["/d", "/q"]),
+        PtySize::default(),
+        s1,
+    )
+    .unwrap();
     let (s2, _rx2) = sink();
     let err = pm
         .spawn("dup", &CommandSpec::new("cmd.exe"), PtySize::default(), s2)
@@ -119,7 +135,13 @@ fn large_output_is_streamed_completely() {
 #[test]
 fn unknown_session_errors() {
     let pm = ProcessManager::new();
-    assert!(matches!(pm.write("nope", vec![]), Err(ProcessError::NotFound(_))));
-    assert!(matches!(pm.resize("nope", PtySize::default()), Err(ProcessError::NotFound(_))));
+    assert!(matches!(
+        pm.write("nope", vec![]),
+        Err(ProcessError::NotFound(_))
+    ));
+    assert!(matches!(
+        pm.resize("nope", PtySize::default()),
+        Err(ProcessError::NotFound(_))
+    ));
     assert!(matches!(pm.kill("nope"), Err(ProcessError::NotFound(_))));
 }
