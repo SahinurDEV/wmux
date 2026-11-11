@@ -1,12 +1,28 @@
+<div align="center">
+
+<img src="docs/assets/logo.png" alt="Wmux logo" width="96" height="96" />
+
 # Wmux
 
-A Windows-native developer workspace for running many terminals and AI coding
-agents side by side: workspaces, recursive split panes, real ConPTY shells, and
-session restore, in a fast Tauri 2 desktop app.
+**A Windows-native developer workspace for terminals and AI coding agents.**
+
+Workspaces · recursive split panes · real ConPTY shells · session restore
+
+[![CI](https://github.com/SahinurDEV/wmux/actions/workflows/ci.yml/badge.svg)](https://github.com/SahinurDEV/wmux/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4)
+![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-24C8DB)
+![Status: early development](https://img.shields.io/badge/status-early%20development-orange)
+
+[Features](#features-today) · [Install](#install) · [Build from source](#build-from-source) · [Roadmap](docs/PROGRESS.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
+
+</div>
+
+---
 
 > **Status: early development (v0.1, milestone 1).** Terminals, workspaces,
 > splits and persistence are implemented. AI agents, the embedded browser, Git,
-> port monitoring and the `wmux` CLI are planned. See [docs/PROGRESS.md](docs/PROGRESS.md).
+> port monitoring and the `wmux` CLI are on the [roadmap](docs/PROGRESS.md).
 
 Wmux is an independent open-source project inspired by the workflow of tools
 like cmux. It shares no code, branding or assets with them.
@@ -98,11 +114,25 @@ tests/e2e/                Playwright-over-CDP end-to-end test of the real app
 docs/                     Architecture, decisions and progress
 ```
 
+## Roadmap
+
+| Phase | Scope | Status |
+| --- | --- | --- |
+| 1-3 | Foundation, ConPTY terminals, workspaces, splits, persistence | In progress |
+| 4 | AI agent adapters (Claude Code, Codex, Gemini CLI, OpenCode, Aider) | Planned |
+| 5 | Embedded WebView2 browser and browser automation API | Planned |
+| 6 | Git panel, port monitoring, workspace search | Planned |
+| 7 | `wmux` CLI and named-pipe automation API | Planned |
+| 8-10 | Notifications, crash recovery, signing, auto-update, ARM64 | Planned |
+
+Details and per-item verification status: [docs/PROGRESS.md](docs/PROGRESS.md).
+
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first. Report security issues
-privately as described in [SECURITY.md](SECURITY.md).
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, and follow our
+[Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately as
+described in [SECURITY.md](SECURITY.md).
 
 ## License
 

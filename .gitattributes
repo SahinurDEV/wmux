@@ -1,0 +1,6 @@
+# Normalize line endings in the repository; check out with LF everywhere so
+# rustfmt, Prettier and diffs behave the same on every machine.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary
