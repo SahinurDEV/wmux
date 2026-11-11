@@ -61,7 +61,7 @@ fn migrations_apply_and_are_idempotent() {
         assert_eq!(store.schema_version().unwrap(), 1);
         assert!(outcome.recovered_from.is_none());
     }
-    let (store, _) = Store::open(&path).unwrap();
+    let (store, _) = Store::open(path).unwrap();
     assert_eq!(store.schema_version().unwrap(), 1);
 }
 
@@ -204,7 +204,7 @@ fn corrupt_database_is_moved_aside_and_recreated() {
         b"this is definitely not a sqlite database, just garbage bytes......",
     )
     .unwrap();
-    let (store, outcome) = Store::open(&path).unwrap();
+    let (store, outcome) = Store::open(path).unwrap();
     assert_eq!(store.schema_version().unwrap(), 1);
     let aside = outcome.recovered_from.expect("recovered");
     assert!(aside.exists());
@@ -221,7 +221,7 @@ fn backup_produces_a_usable_copy() {
     store.save_snapshot(&snap).unwrap();
     let dest = dir.path().join("backup.db");
     store.backup_to(&dest).unwrap();
-    let (copy, _) = Store::open(&dest).unwrap();
+    let (copy, _) = Store::open(dest).unwrap();
     assert_eq!(copy.load_snapshot().unwrap().workspaces.len(), 1);
 }
 

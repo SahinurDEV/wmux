@@ -1,3 +1,5 @@
+# Minor/patch updates are grouped into one PR per ecosystem; major updates
+# arrive individually so breaking changes can be reviewed one at a time.
 version: 2
 updates:
   - package-ecosystem: cargo
@@ -5,8 +7,8 @@ updates:
     schedule:
       interval: weekly
     groups:
-      tauri:
-        patterns: ["tauri*"]
+      rust-minor:
+        update-types: [minor, patch]
     open-pull-requests-limit: 5
 
   - package-ecosystem: npm
@@ -14,15 +16,16 @@ updates:
     schedule:
       interval: weekly
     groups:
-      tauri:
-        patterns: ["@tauri-apps/*"]
+      npm-minor:
+        update-types: [minor, patch]
       xterm:
         patterns: ["@xterm/*"]
-      react:
-        patterns: ["react", "react-dom", "@types/react*"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -22,19 +22,19 @@ pub fn quote_arg(arg: &str, out: &mut String) {
             '\\' => backslashes += 1,
             '"' => {
                 // Escape all preceding backslashes plus the quote itself.
-                out.extend(std::iter::repeat('\\').take(backslashes * 2 + 1));
+                out.extend(std::iter::repeat_n('\\', backslashes * 2 + 1));
                 out.push('"');
                 backslashes = 0;
             }
             _ => {
-                out.extend(std::iter::repeat('\\').take(backslashes));
+                out.extend(std::iter::repeat_n('\\', backslashes));
                 out.push(c);
                 backslashes = 0;
             }
         }
     }
     // Backslashes before the closing quote must be doubled.
-    out.extend(std::iter::repeat('\\').take(backslashes * 2));
+    out.extend(std::iter::repeat_n('\\', backslashes * 2));
     out.push('"');
 }
 

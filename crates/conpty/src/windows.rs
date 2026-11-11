@@ -7,7 +7,7 @@ use std::ptr::{null, null_mut};
 use std::sync::Mutex;
 use std::time::Duration;
 
-use windows_sys::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0, WAIT_TIMEOUT};
+use windows_sys::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0};
 use windows_sys::Win32::System::Console::{
     ClosePseudoConsole, CreatePseudoConsole, ResizePseudoConsole, COORD, HPCON,
 };
@@ -242,10 +242,9 @@ pub fn spawn(spec: &CommandSpec, size: PtySize) -> Result<(Pty, PtyReader, PtyWr
     si.StartupInfo.hStdError = INVALID_HANDLE_VALUE;
     si.lpAttributeList = attrs.ptr();
 
-    let job = match create_kill_on_close_job() {
-        Ok(job) => Some(job),
-        Err(_) => None, // Extremely unlikely on Win10+; fall back to process-only kill.
-    };
+    // Job creation only fails in exotic environments; then only the direct
+    // child can be killed.
+    let job = create_kill_on_close_job().ok();
 
     let mut pi: PROCESS_INFORMATION = unsafe { std::mem::zeroed() };
     let ok = unsafe {
@@ -389,10 +388,10 @@ impl Pty {
     /// Wait up to `timeout` for the child to exit.
     pub fn wait_timeout(&self, timeout: Duration) -> Option<u32> {
         let ms = u32::try_from(timeout.as_millis()).unwrap_or(INFINITE - 1);
-        match unsafe { WaitForSingleObject(raw(&self.process), ms) } {
-            WAIT_OBJECT_0 => self.exit_code(),
-            WAIT_TIMEOUT => None,
-            _ => None,
+        if unsafe { WaitForSingleObject(raw(&self.process), ms) } == WAIT_OBJECT_0 {
+            self.exit_code()
+        } else {
+            None
         }
     }
 
