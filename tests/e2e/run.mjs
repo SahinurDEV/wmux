@@ -179,10 +179,12 @@ async function main() {
   const restoredFirst = await state(page, "s.workspaces[0].panes[0].surfaces[0].id");
   await waitRunning(page, restoredFirst);
   const text = await terminalText(page, restoredFirst);
-  assert(text.includes("Layout restored"), "restored terminal states that it is a new session");
+  // The terminal was restarted (and cleared) above, so its history starts there.
+  assert(text.includes("after-restart"), "restored terminal shows its previous output");
+  assert(text.includes("session restored"), "restored terminal marks where the previous session ended");
   await typeInTerminal(page, restoredFirst, 'Write-Output ("restored-" + "ok")');
   await waitFor(async () => (await terminalText(page, restoredFirst)).includes("restored-ok"), "restored terminal runs commands");
-  log("restored terminals start new real sessions and say so honestly");
+  log("restored terminals show their history and start new real sessions");
 
   await page.screenshot({ path: join(shots, "02-restored.png") });
   await closeApp(app);

@@ -22,6 +22,12 @@ export interface Settings {
   scrollback: number;
   defaultShellProfileId: string | null;
   shellIntegration: boolean;
+  /** Bring back terminal text after a restart. */
+  restoreScrollback: boolean;
+  /** Resume Claude Code / Codex sessions after a restart. */
+  resumeAgentSessions: boolean;
+  /** Start the command that was still running again after a restart. */
+  rerunCommands: boolean;
   copyOnSelect: boolean;
   gpuRendering: boolean;
   confirmCloseWorkspace: boolean;
@@ -43,6 +49,9 @@ export const DEFAULT_SETTINGS: Settings = {
   scrollback: 10000,
   defaultShellProfileId: null,
   shellIntegration: true,
+  restoreScrollback: true,
+  resumeAgentSessions: true,
+  rerunCommands: true,
   copyOnSelect: false,
   gpuRendering: true,
   confirmCloseWorkspace: true,
@@ -62,6 +71,9 @@ const KEYS: Record<keyof Settings, string> = {
   scrollback: "terminal.scrollback",
   defaultShellProfileId: "terminal.defaultShellProfileId",
   shellIntegration: "terminal.shellIntegration",
+  restoreScrollback: "terminal.restoreScrollback",
+  resumeAgentSessions: "terminal.resumeAgentSessions",
+  rerunCommands: "terminal.rerunCommands",
   copyOnSelect: "terminal.copyOnSelect",
   gpuRendering: "terminal.gpuRendering",
   confirmCloseWorkspace: "general.confirmCloseWorkspace",
@@ -93,6 +105,9 @@ export function settingsFromStore(raw: Record<string, unknown>): Settings {
   const dsp = get("defaultShellProfileId");
   s.defaultShellProfileId = typeof dsp === "string" ? dsp : null;
   s.shellIntegration = bool(get("shellIntegration")) ?? s.shellIntegration;
+  s.restoreScrollback = bool(get("restoreScrollback")) ?? s.restoreScrollback;
+  s.resumeAgentSessions = bool(get("resumeAgentSessions")) ?? s.resumeAgentSessions;
+  s.rerunCommands = bool(get("rerunCommands")) ?? s.rerunCommands;
   s.copyOnSelect = bool(get("copyOnSelect")) ?? s.copyOnSelect;
   s.gpuRendering = bool(get("gpuRendering")) ?? s.gpuRendering;
   s.confirmCloseWorkspace = bool(get("confirmCloseWorkspace")) ?? s.confirmCloseWorkspace;

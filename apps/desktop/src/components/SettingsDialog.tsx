@@ -157,6 +157,21 @@ function TerminalTab() {
       >
         <Toggle label="Shell integration" checked={s.shellIntegration} onChange={(v) => void updateSettings({ shellIntegration: v })} />
       </Row>
+      <Row label="Restore terminal text" description="After Wmux or the PC restarts, each terminal shows what was on screen before.">
+        <Toggle label="Restore terminal text" checked={s.restoreScrollback} onChange={(v) => void updateSettings({ restoreScrollback: v })} />
+      </Row>
+      <Row
+        label="Resume agent sessions"
+        description="Reopens the Claude Code or Codex conversation that was running in a terminal, using the agent's own resume command."
+      >
+        <Toggle label="Resume agent sessions" checked={s.resumeAgentSessions} onChange={(v) => void updateSettings({ resumeAgentSessions: v })} />
+      </Row>
+      <Row
+        label="Re-run running commands"
+        description="Starts the command that was still running when Wmux closed (for example a dev server) again. PowerShell only; needs shell integration. Turn off if you run commands that must not repeat."
+      >
+        <Toggle label="Re-run running commands" checked={s.rerunCommands} onChange={(v) => void updateSettings({ rerunCommands: v })} />
+      </Row>
       <Row label="Cursor style">
         <select className={cx(inputClass, "w-32")} value={s.cursorStyle} onChange={(e) => void updateSettings({ cursorStyle: e.target.value as typeof s.cursorStyle })}>
           <option value="bar">Bar</option>

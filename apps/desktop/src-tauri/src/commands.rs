@@ -6,6 +6,7 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -14,7 +15,9 @@ use tauri::{Manager, State};
 use wmux_process_manager::{
     CommandSpec, EventSink, ProcessError, ProcessManager, PtySize, SessionEvent, SessionInfo,
 };
-use wmux_session_manager::{OpenOutcome, SessionSnapshot, Store, StoreError};
+use wmux_session_manager::{
+    OpenOutcome, RestoreRecord, SessionSnapshot, Store, StoreError, TerminalState,
+};
 
 use crate::shells::{self, CustomProfile, ShellProfile};
 
@@ -23,6 +26,8 @@ pub struct AppState {
     pub store: Arc<Mutex<Store>>,
     pub db: OpenOutcome,
     pub data_dir: PathBuf,
+    /// Set to stop the agent session scan (before terminals are killed).
+    pub agent_scan_stop: Arc<AtomicBool>,
 }
 
 /// Error returned to the frontend as `{ kind, message }`.
@@ -331,6 +336,24 @@ pub async fn session_load(state: State<'_, AppState>) -> CmdResult<SessionSnapsh
 #[tauri::command]
 pub async fn session_save(state: State<'_, AppState>, snapshot: SessionSnapshot) -> CmdResult<()> {
     Ok(lock_store(&state)?.save_snapshot(&snapshot)?)
+}
+
+/// What was saved for one terminal: scrollback, the agent session that was
+/// running in it, and the command that was still running.
+#[tauri::command]
+pub async fn terminal_restore_get(
+    state: State<'_, AppState>,
+    id: String,
+) -> CmdResult<RestoreRecord> {
+    Ok(lock_store(&state)?.get_restore(&id)?)
+}
+
+#[tauri::command]
+pub async fn terminal_state_save(
+    state: State<'_, AppState>,
+    items: Vec<TerminalState>,
+) -> CmdResult<()> {
+    Ok(lock_store(&state)?.save_terminal_state(&items)?)
 }
 
 #[tauri::command]

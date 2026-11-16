@@ -39,9 +39,13 @@ like cmux. It shares no code, branding or assets with them.
   drop). Each workspace has its own directory, shell, startup commands and environment.
 - **Split panes.** Nested horizontal/vertical splits, resizable, maximize/
   restore, directional focus, and terminal tabs in every pane.
-- **Session restore.** Workspaces, layouts, tabs and each terminal's working
-  directory are saved to SQLite and restored on launch. Processes cannot
-  survive a restart; restored terminals start new sessions and say so.
+- **Session restore that survives a reboot.** Workspaces, layouts, tabs and
+  working directories come back, and so does each terminal's text. A Claude
+  Code or Codex conversation that was open is resumed with the agent's own
+  resume command, and a command that was still running (a dev server, a
+  watcher) is started again. Processes themselves cannot survive a restart:
+  Wmux starts a new shell and picks up where the old one stopped. Each part
+  can be turned off in Settings → Terminal.
 - **Keyboard-first.** Command palette (`Ctrl+Shift+P`) with fuzzy search and
   customizable shortcuts that never steal shell keys like `Ctrl+C/D/R/W`.
 - Search in terminal output, copy/paste (Windows Terminal conventions),
@@ -85,7 +89,7 @@ changed under **Settings > Keyboard**.
 Every release includes `SHA256SUMS.txt`. Verify a download with:
 
 ```powershell
-Get-FileHash .\Wmux_0.1.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Wmux_0.2.0_x64-setup.exe -Algorithm SHA256
 ```
 
 **Requirements:** Windows 10 (1809+) or Windows 11, x64, and the Microsoft Edge

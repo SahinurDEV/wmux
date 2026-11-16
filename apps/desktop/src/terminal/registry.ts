@@ -5,16 +5,18 @@
 import { Terminal, type IDisposable } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
+import { SerializeAddon } from "@xterm/addon-serialize";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { errorMessage, ipc } from "../lib/ipc";
+import { errorMessage, ipc, type RestoreRecord, type TerminalState } from "../lib/ipc";
 import { onSurfacesRemoved, findSurface, useStore } from "../state/store";
 import { paneIds } from "../state/layout";
 import type { Settings } from "../state/settings";
 import { parseOsc7, parseOsc9 } from "./osc";
+import { parseShellReport, restoreAction, WMUX_OSC } from "./restore";
 import { darkTerminalTheme, lightTerminalTheme } from "./themes";
 
 type QueueItem = { kind: "text"; data: string } | { kind: "binary"; data: number[] };
@@ -24,6 +26,7 @@ interface Entry {
   term: Terminal;
   fit: FitAddon;
   search: SearchAddon;
+  serializer: SerializeAddon;
   host: HTMLDivElement;
   opened: boolean;
   webgl: WebglAddon | null;
@@ -36,11 +39,35 @@ interface Entry {
   resizeTimer?: number;
   observer: ResizeObserver;
   disposables: IDisposable[];
+  /** Saved state from the previous app session has been applied (or there was none). */
+  restored: boolean;
+  /** Buffer changed since it was last saved. */
+  dirty: boolean;
+  /** Command the shell reported as running (null at the prompt). */
+  runningCommand: string | null;
+  /** `runningCommand` as last written to the database. */
+  savedCommand: string | null;
+  /** Pending "the command finished" (see COMMAND_CLEAR_GRACE_MS). */
+  clearTimer?: number;
 }
 
 const entries = new Map<string, Entry>();
 const startupRanFor = new Set<string>();
 let appearance: { settings: Settings; dark: boolean } | null = null;
+
+/** How often changed terminals are written to the database. */
+const SAVE_INTERVAL_MS = 10_000;
+/** Delay before a changed running command is written. */
+const COMMAND_SAVE_DEBOUNCE_MS = 800;
+/**
+ * When the PC shuts down, Windows may kill a running command a moment before
+ * Wmux itself; the shell then shows its prompt and reports "idle". Waiting
+ * before believing that keeps the command remembered for the next start.
+ */
+const COMMAND_CLEAR_GRACE_MS = 3_000;
+/** Lines of history kept per terminal, and a size bound for the saved text. */
+const SAVE_MAX_LINES = 5_000;
+const SAVE_MAX_CHARS = 1_200_000;
 
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
@@ -75,8 +102,10 @@ function create(surfaceId: string): Entry {
   });
   const fit = new FitAddon();
   const search = new SearchAddon();
+  const serializer = new SerializeAddon();
   term.loadAddon(fit);
   term.loadAddon(search);
+  term.loadAddon(serializer);
   term.loadAddon(new Unicode11Addon());
   term.unicode.activeVersion = "11";
   term.loadAddon(
@@ -97,6 +126,7 @@ function create(surfaceId: string): Entry {
     term,
     fit,
     search,
+    serializer,
     host,
     opened: false,
     webgl: null,
@@ -107,6 +137,10 @@ function create(surfaceId: string): Entry {
     pumping: false,
     observer: new ResizeObserver(() => scheduleFit(entry)),
     disposables: [],
+    restored: false,
+    dirty: false,
+    runningCommand: null,
+    savedCommand: null,
   };
 
   entry.disposables.push(
@@ -142,6 +176,15 @@ function create(surfaceId: string): Entry {
       const cwd = parseOsc9(data);
       if (cwd) store().setSurfaceCwd(surfaceId, cwd);
       return false; // let other handlers (e.g. progress) see it too
+    }),
+    term.parser.registerOscHandler(WMUX_OSC, (data) => {
+      const report = parseShellReport(data);
+      if (report?.type === "command") setRunningCommand(entry, report.command);
+      else if (report?.type === "prompt") commandFinished(entry);
+      return true;
+    }),
+    term.onWriteParsed(() => {
+      entry.dirty = true;
     }),
     term.parser.registerOscHandler(7, (data) => {
       const cwd = parseOsc7(data);
@@ -285,6 +328,134 @@ export function detach(surfaceId: string, container: HTMLElement) {
   if (entry.host.parentElement === container) container.removeChild(entry.host);
 }
 
+// ------------------------------------------------------- session restore
+
+function setRunningCommand(entry: Entry, command: string | null) {
+  window.clearTimeout(entry.clearTimer);
+  entry.clearTimer = undefined;
+  if (entry.runningCommand === command) return;
+  entry.runningCommand = command;
+  scheduleCommandSave();
+}
+
+/** The shell is back at its prompt: forget the command, after a grace period. */
+function commandFinished(entry: Entry) {
+  if (entry.runningCommand === null || entry.clearTimer !== undefined) return;
+  entry.clearTimer = window.setTimeout(() => setRunningCommand(entry, null), COMMAND_CLEAR_GRACE_MS);
+}
+
+/** Serialized buffer for saving, or null if it cannot be kept within bounds. */
+function serializeBuffer(entry: Entry): string | null {
+  let lines = Math.min(store().settings.scrollback, SAVE_MAX_LINES);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    // Modes (mouse reporting, bracketed paste...) and full-screen apps belong
+    // to the old process; only the normal screen text is worth bringing back.
+    const data = entry.serializer.serialize({ scrollback: lines, excludeModes: true, excludeAltBuffer: true });
+    if (data.length <= SAVE_MAX_CHARS) return data;
+    lines = Math.floor(lines / 2);
+  }
+  return null;
+}
+
+let commandSaveTimer: number | undefined;
+let stateSaving: Promise<void> = Promise.resolve();
+let reportedSaveError = false;
+/**
+ * Set once the final save before closing has been made. From then on the
+ * terminals are being torn down, and what they report ("the command ended")
+ * describes the shutdown, not what should be restored next time.
+ */
+let closed = false;
+
+function scheduleCommandSave() {
+  window.clearTimeout(commandSaveTimer);
+  commandSaveTimer = window.setTimeout(() => void saveState(false), COMMAND_SAVE_DEBOUNCE_MS);
+}
+
+/**
+ * Write changed terminals to the database. `includeScrollback` also saves the
+ * text of terminals whose buffer changed; otherwise only running commands.
+ */
+function saveState(includeScrollback: boolean): Promise<void> {
+  stateSaving = stateSaving.then(async () => {
+    if (closed) return;
+    const keepText = store().settings.restoreScrollback;
+    const items: TerminalState[] = [];
+    const saved: Array<{ entry: Entry; text: boolean; command: string | null }> = [];
+    for (const entry of entries.values()) {
+      // Never overwrite saved state before it has been restored into this terminal.
+      if (!entry.restored) continue;
+      const text = includeScrollback && entry.dirty;
+      if (!text && entry.runningCommand === entry.savedCommand) continue;
+      const item: TerminalState = { surfaceId: entry.surfaceId, runningCommand: entry.runningCommand };
+      if (text) item.scrollback = keepText ? (serializeBuffer(entry) ?? "") : "";
+      items.push(item);
+      saved.push({ entry, text, command: entry.runningCommand });
+      if (text) entry.dirty = false;
+    }
+    if (items.length === 0) return;
+    try {
+      await ipc.terminalStateSave(items);
+      for (const s of saved) s.entry.savedCommand = s.command;
+      reportedSaveError = false;
+    } catch (e) {
+      for (const s of saved) if (s.text) s.entry.dirty = true;
+      if (!reportedSaveError) store().toast("error", `Could not save terminal history: ${errorMessage(e)}`);
+      reportedSaveError = true;
+    }
+  });
+  return stateSaving;
+}
+
+window.setInterval(() => void saveState(true), SAVE_INTERVAL_MS);
+
+/** Save every terminal now (before the window closes). */
+export function flushState(): Promise<void> {
+  window.clearTimeout(commandSaveTimer);
+  // A deliberate close: commands that already returned to the prompt are done.
+  for (const entry of entries.values()) {
+    if (entry.clearTimer !== undefined) setRunningCommand(entry, null);
+  }
+  window.clearTimeout(commandSaveTimer);
+  return saveState(true).then(() => {
+    closed = true;
+  });
+}
+
+/** Write `data` and wait until xterm has processed it. */
+function writeAndWait(term: Terminal, data: string): Promise<void> {
+  return new Promise((resolve) => term.write(data, resolve));
+}
+
+/**
+ * Replay the text saved by the previous app session, followed by a note about
+ * what is being started again. Everything ends up in the scrollback, directly
+ * above an empty screen: ConPTY starts every new shell by clearing the screen
+ * and drawing from the top-left, which would otherwise wipe the restored text.
+ */
+async function replayScrollback(entry: Entry, scrollback: string | null, notice: string | null) {
+  const { term } = entry;
+  if (scrollback) {
+    await writeAndWait(term, scrollback);
+    const when = new Date().toLocaleString();
+    await writeAndWait(term, `\x1b[0m\r\n${DIM}── session restored · ${when} ──${RESET}\r\n`);
+  }
+  if (notice) await writeAndWait(term, `${DIM}↻ ${notice}${RESET}\r\n`);
+  const used = term.buffer.active.cursorY;
+  if (used > 0) await writeAndWait(term, `\x1b[${term.rows};1H${"\n".repeat(used)}`);
+  await writeAndWait(term, "\x1b[H");
+}
+
+/** Load what was saved for this terminal; never fails the start. */
+async function loadRestore(surfaceId: string): Promise<RestoreRecord | null> {
+  try {
+    return await ipc.terminalRestoreGet(surfaceId);
+  } catch (e) {
+    store().toast("error", `Could not load terminal history: ${errorMessage(e)}`);
+    return null;
+  }
+}
+
 // -------------------------------------------------------------- lifecycle
 
 export async function start(surfaceId: string): Promise<void> {
@@ -300,11 +471,26 @@ export async function start(surfaceId: string): Promise<void> {
   s.setRuntime(surfaceId, { status: "starting", error: undefined, exitCode: undefined });
   fitNow(entry);
 
-  if (!entry.everStarted && surface.lastRun?.pid) {
-    const prog = surface.lastRun.program?.split(/[\\/]/).pop() ?? "shell";
-    entry.term.writeln(
-      `${DIM}↻ Layout restored. The previous ${prog} (PID ${surface.lastRun.pid}) ended when Wmux closed; started a new session.${RESET}`,
-    );
+  // First start of this terminal in this app session: bring back what the
+  // previous session saved (text, agent conversation, running command).
+  let action: ReturnType<typeof restoreAction> = null;
+  let agentCwd: string | null = null;
+  if (!entry.restored) {
+    const saved = await loadRestore(surfaceId);
+    if (entry.generation !== generation) return;
+    if (saved) {
+      action = restoreAction(saved, s.settings);
+      const notice = action && `${action.kind === "agent" ? "Resuming agent session" : "Re-running"}: ${action.command}`;
+      await replayScrollback(entry, s.settings.restoreScrollback ? saved.scrollback : null, notice);
+      if (action?.kind === "agent") agentCwd = saved.agent?.cwd ?? null;
+      // Keep the command remembered until the new shell reports for itself.
+      if (action?.kind === "command") {
+        entry.runningCommand = action.command;
+        entry.savedCommand = saved.runningCommand;
+      }
+    }
+    entry.restored = true;
+    if (entry.generation !== generation) return;
   }
 
   try {
@@ -313,7 +499,8 @@ export async function start(surfaceId: string): Promise<void> {
         surfaceId,
         workspaceId: ws.id,
         profileId: surface.shellProfileId ?? ws.shellProfileId ?? s.settings.defaultShellProfileId,
-        cwd: surface.cwd ?? ws.cwd,
+        // An agent conversation belongs to the directory it was started in.
+        cwd: agentCwd ?? surface.cwd ?? ws.cwd,
         env: ws.env,
         cols: Math.max(entry.term.cols, 2),
         rows: Math.max(entry.term.rows, 2),
@@ -325,6 +512,8 @@ export async function start(surfaceId: string): Promise<void> {
           entry.term.write(ev.data);
         } else {
           entry.state = "exited";
+          // Same grace as a prompt: at shutdown the shell may die just before Wmux.
+          commandFinished(entry);
           store().setRuntime(surfaceId, { status: "exited", exitCode: ev.code });
           const code = ev.code === null ? "unknown" : String(ev.code);
           entry.term.write(
@@ -354,6 +543,7 @@ export async function start(surfaceId: string): Promise<void> {
       void ipc.ptyResize(surfaceId, entry.term.cols, entry.term.rows).catch(() => undefined);
     }
     runStartupCommands(entry, ws.id);
+    if (action && !exited) enqueue(entry, { kind: "text", data: `${action.command}\r` });
   } catch (e) {
     if (entry.generation !== generation) return;
     entry.state = "exited";
@@ -424,6 +614,7 @@ export function dispose(surfaceId: string) {
   entry.generation++;
   entry.observer.disconnect();
   window.clearTimeout(entry.resizeTimer);
+  window.clearTimeout(entry.clearTimer);
   entry.disposables.forEach((d) => d.dispose());
   entry.webgl?.dispose();
   entry.term.dispose();

@@ -58,11 +58,11 @@ fn migrations_apply_and_are_idempotent() {
     let path = dir.path().join("wmux.db");
     {
         let (store, outcome) = Store::open(&path).unwrap();
-        assert_eq!(store.schema_version().unwrap(), 1);
+        assert_eq!(store.schema_version().unwrap(), 2);
         assert!(outcome.recovered_from.is_none());
     }
     let (store, _) = Store::open(path).unwrap();
-    assert_eq!(store.schema_version().unwrap(), 1);
+    assert_eq!(store.schema_version().unwrap(), 2);
 }
 
 #[test]
@@ -205,7 +205,7 @@ fn corrupt_database_is_moved_aside_and_recreated() {
     )
     .unwrap();
     let (store, outcome) = Store::open(path).unwrap();
-    assert_eq!(store.schema_version().unwrap(), 1);
+    assert_eq!(store.schema_version().unwrap(), 2);
     let aside = outcome.recovered_from.expect("recovered");
     assert!(aside.exists());
 }
@@ -234,4 +234,85 @@ fn history_is_pruned() {
             .unwrap();
     }
     assert_eq!(store.prune_history(5).unwrap(), 15);
+}
+
+#[test]
+fn restore_data_roundtrips_and_is_removed_with_its_surface() {
+    let mut store = Store::open_in_memory().unwrap();
+    let mut snap = SessionSnapshot {
+        workspaces: vec![workspace("w", vec![pane("p", &["s1", "s2"])])],
+        ..Default::default()
+    };
+    store.save_snapshot(&snap).unwrap();
+    assert_eq!(store.get_restore("s1").unwrap(), RestoreRecord::default());
+
+    let agent = AgentRecord {
+        kind: "claude".into(),
+        session_id: "e447e639-4a2b-43b7-9a58-3839af532169".into(),
+        cwd: Some(r"C:\src".into()),
+    };
+    store.set_agent("s1", Some(&agent)).unwrap();
+    let state = |scrollback: Option<&str>, cmd: Option<&str>| TerminalState {
+        surface_id: "s1".into(),
+        scrollback: scrollback.map(Into::into),
+        running_command: cmd.map(Into::into),
+    };
+    store
+        .save_terminal_state(&[state(Some("hello\r\nworld"), Some("npm run dev"))])
+        .unwrap();
+    // The two writers own different columns and must not clobber each other.
+    let got = store.get_restore("s1").unwrap();
+    assert_eq!(got.scrollback.as_deref(), Some("hello\r\nworld"));
+    assert_eq!(got.agent, Some(agent));
+    assert_eq!(got.running_command.as_deref(), Some("npm run dev"));
+    // A command-only update clears the command but keeps the scrollback.
+    store.save_terminal_state(&[state(None, None)]).unwrap();
+    let got = store.get_restore("s1").unwrap();
+    assert_eq!(got.running_command, None);
+    assert_eq!(got.scrollback.as_deref(), Some("hello\r\nworld"));
+
+    store.set_agent("s1", None).unwrap();
+    let got = store.get_restore("s1").unwrap();
+    assert!(got.agent.is_none());
+    assert_eq!(got.scrollback.as_deref(), Some("hello\r\nworld"));
+
+    // Saving a layout keeps restore data; removing the surface drops it.
+    store.save_snapshot(&snap).unwrap();
+    assert!(store.get_restore("s1").unwrap().scrollback.is_some());
+    snap.workspaces[0].panes[0].surfaces.remove(0);
+    store.save_snapshot(&snap).unwrap();
+    assert_eq!(store.get_restore("s1").unwrap(), RestoreRecord::default());
+}
+
+#[test]
+fn unsafe_agent_session_ids_and_huge_scrollback_are_rejected() {
+    let mut store = Store::open_in_memory().unwrap();
+    for bad in [
+        "",
+        "short",
+        "abc; rm -rf /",
+        "id with spaces 123",
+        "a\"b'c`d$e&f",
+    ] {
+        let agent = AgentRecord {
+            kind: "claude".into(),
+            session_id: bad.into(),
+            cwd: None,
+        };
+        assert!(store.set_agent("s", Some(&agent)).is_err(), "{bad:?}");
+    }
+    let huge = "x".repeat(MAX_SCROLLBACK_BYTES + 1);
+    let item = |scrollback: Option<String>, cmd: Option<String>| TerminalState {
+        surface_id: "s".into(),
+        scrollback,
+        running_command: cmd,
+    };
+    assert!(store
+        .save_terminal_state(&[item(Some(huge), None)])
+        .is_err());
+    let long = "y".repeat(MAX_COMMAND_BYTES + 1);
+    assert!(store
+        .save_terminal_state(&[item(None, Some(long))])
+        .is_err());
+    assert_eq!(store.get_restore("s").unwrap(), RestoreRecord::default());
 }

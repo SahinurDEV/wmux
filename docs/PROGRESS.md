@@ -22,7 +22,10 @@ Legend: ✅ done and covered by tests · 🟡 implemented, awaiting first CI/E2E
 | Multiple tabs per pane | ✅ | `store.test.ts`; E2E |
 | Recursive horizontal/vertical splits, resize, maximize, directional focus | ✅ | `layout.test.ts` (incl. randomized), E2E |
 | SQLite persistence, migrations, backup, corruption recovery | 🟡 | `crates/session-manager` tests in CI |
-| Restart & restore workspaces, layout, cwd | 🟡 | E2E (two launches) |
+| Restart & restore workspaces, layout, cwd | ✅ | E2E (two launches) |
+| Restore terminal text (scrollback) after app or PC restart | ✅ | `tests/e2e/restore.mjs` (normal close and hard kill) |
+| Resume Claude Code / Codex sessions by native session id | ✅ | `agents.rs` unit tests; `restore.mjs --agent` |
+| Re-run the command that was still running (PowerShell) | ✅ | `restore.test.ts`; `restore.mjs` |
 | Command palette + configurable shortcuts | ✅ | `commands.test.ts`, `fuzzy.test.ts` |
 | Installers (NSIS, MSI) + portable ZIP | 🟡 | CI artifacts |
 
@@ -35,6 +38,6 @@ Legend: ✅ done and covered by tests · 🟡 implemented, awaiting first CI/E2E
 | 5 | WebView2 browser surfaces (native child controller), automation API | ⬜ |
 | 6 | Git panel, port monitoring, workspace search | ⬜ |
 | 7 | `wmux.exe` CLI, named-pipe JSON-RPC, event subscriptions | ⬜ |
-| 8 | Agent session recovery, browser restoration, crash recovery UI | ⬜ |
+| 8 | Browser restoration, crash recovery UI (agent session recovery shipped in 0.2.0) | ⬜ |
 | 9 | Notifications (OSC 9/777, rings, badges, toasts), tray, a11y pass | ⬜ |
 | 10 | Code signing, auto-update, ARM64 | ⬜ |

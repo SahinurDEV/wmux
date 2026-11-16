@@ -86,6 +86,25 @@ export interface SessionSnapshot {
   ui: unknown;
 }
 
+/** A coding agent session that was running in a terminal (see agents.rs). */
+export interface AgentRecord {
+  kind: string;
+  sessionId: string;
+  cwd: string | null;
+}
+/** What was saved to bring one terminal back after a restart. */
+export interface RestoreRecord {
+  scrollback: string | null;
+  agent: AgentRecord | null;
+  runningCommand: string | null;
+}
+export interface TerminalState {
+  surfaceId: string;
+  /** Serialized buffer; omit to keep what is already stored. */
+  scrollback?: string | null;
+  runningCommand: string | null;
+}
+
 const TAG_OUTPUT = 0;
 const TAG_EXIT = 1;
 const decoder = new TextDecoder();
@@ -132,6 +151,8 @@ export const ipc = {
 
   sessionLoad: () => invoke<SessionSnapshot>("session_load"),
   sessionSave: (snapshot: SessionSnapshot) => invoke<void>("session_save", { snapshot }),
+  terminalRestoreGet: (id: string) => invoke<RestoreRecord>("terminal_restore_get", { id }),
+  terminalStateSave: (items: TerminalState[]) => invoke<void>("terminal_state_save", { items }),
   settingsGet: () => invoke<Record<string, unknown>>("settings_get"),
   settingsSet: (values: Record<string, unknown>) => invoke<void>("settings_set", { values }),
   dbBackup: () => invoke<string>("db_backup"),

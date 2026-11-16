@@ -182,18 +182,39 @@ pub fn detect(custom: &[CustomProfile]) -> Vec<ShellProfile> {
     out
 }
 
-/// PowerShell prompt wrapper that reports the current directory to the
-/// terminal with the Windows Terminal `OSC 9;9` sequence. It wraps whatever
-/// prompt the user's profile defined, so their prompt stays intact.
+/// PowerShell integration. It wraps whatever prompt the user's profile
+/// defined, so their prompt stays intact, and reports to the terminal:
+///
+/// * the current directory, with the Windows Terminal `OSC 9;9` sequence;
+/// * `OSC 7717;P` each time the prompt is shown (the shell is idle);
+/// * `OSC 7717;C;<base64 utf-8>` when a command line is submitted, so Wmux
+///   knows what is running and can start it again after a restart.
+///
+/// The command hook wraps PSReadLine's `PSConsoleHostReadLine`. It is installed
+/// from the prompt because PSReadLine may load after this script runs.
 const PS_INTEGRATION: &str = r#"
 if (-not $global:__wmuxIntegrated) {
   $global:__wmuxIntegrated = $true
   $global:__wmuxOriginalPrompt = $function:prompt
   function global:prompt {
-    $loc = $executionContext.SessionState.Path.CurrentLocation
     $esc = [char]27
-    $osc = ''
-    if ($loc.Provider.Name -eq 'FileSystem') { $osc = "$esc]9;9;`"$($loc.ProviderPath)`"$esc\" }
+    if (-not $global:__wmuxReadLineHooked -and (Test-Path function:PSConsoleHostReadLine)) {
+      $global:__wmuxReadLineHooked = $true
+      $global:__wmuxOriginalReadLine = $function:PSConsoleHostReadLine
+      function global:PSConsoleHostReadLine {
+        # Invoke() returns a collection; the command line is its first item.
+        $result = $global:__wmuxOriginalReadLine.Invoke()
+        $line = if ($result.Count -gt 0) { [string]$result[0] } else { '' }
+        if ($line.Trim()) {
+          $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($line))
+          [Console]::Write("$([char]27)]7717;C;$b64$([char]27)\")
+        }
+        $line
+      }
+    }
+    $loc = $executionContext.SessionState.Path.CurrentLocation
+    $osc = "$esc]7717;P$esc\"
+    if ($loc.Provider.Name -eq 'FileSystem') { $osc += "$esc]9;9;`"$($loc.ProviderPath)`"$esc\" }
     $osc + (& $global:__wmuxOriginalPrompt)
   }
 }
@@ -225,11 +246,9 @@ pub fn launch_for(profile: &ShellProfile, integration: bool) -> Launch {
                 args.push("-EncodedCommand".into());
                 args.push(encode_ps_command(PS_INTEGRATION));
             }
-            ShellKind::Cmd => {
-                // Respect a user-defined PROMPT.
-                if std::env::var_os("PROMPT").is_none() {
-                    extra_env.push(("PROMPT".into(), "$e]9;9;$P$e\\$P$G".into()));
-                }
+            // Respect a user-defined PROMPT.
+            ShellKind::Cmd if std::env::var_os("PROMPT").is_none() => {
+                extra_env.push(("PROMPT".into(), "$e]9;9;$P$e\\$P$G".into()));
             }
             _ => {}
         }

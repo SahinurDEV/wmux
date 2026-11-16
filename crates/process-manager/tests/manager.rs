@@ -128,7 +128,13 @@ fn large_output_is_streamed_completely() {
     .unwrap();
     let (text, code) = drain(&rx);
     assert_eq!(code, Some(0));
-    assert!(text.contains("line-1\r"), "first line missing");
+    // The console may emit control sequences (e.g. a window title) between the
+    // first line and its line break, so only later lines are matched with it.
+    assert!(
+        text.contains("line-1") && text.contains("line-2\r\n"),
+        "first lines missing; output starts with {:?}",
+        text.chars().take(300).collect::<String>()
+    );
     assert!(text.contains("line-5000"), "last line missing");
 }
 

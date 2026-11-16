@@ -59,7 +59,8 @@ dropped, and panes missing from the tree are re-attached.
 SQLite (`rusqlite`, bundled) in `%APPDATA%\dev.wmux.desktop\wmux.db` (or
 `WMUX_DATA_DIR`). Tables: `workspaces`, `panes`, `surfaces`,
 `terminal_sessions` (configuration), `terminal_runs` (last PID/exit per
-surface, written by the backend), `settings`, `app_state`, `session_history`.
+surface, written by the backend), `terminal_restore` (text, agent session and
+running command per surface), `settings`, `app_state`, `session_history`.
 
 The UI saves a full snapshot 400 ms after changes and on window close. A save
 upserts rows and deletes missing ones in one transaction. If the database fails
@@ -67,14 +68,37 @@ to open or fails its integrity check, it is moved aside and a fresh one is
 created; the UI tells the user where the old file went.
 
 **Restore semantics:** layouts, tabs, titles and working directories are
-restored. Processes are not; a restored terminal starts a new shell and prints
-which previous process (program and PID) ended.
+restored. Processes cannot survive a restart, so a restored terminal starts a
+new shell and is brought back to where the old one stopped from three things
+kept per surface in `terminal_restore`:
+
+- **Text.** The registry serializes each changed terminal buffer
+  (`@xterm/addon-serialize`, normal screen only, bounded) every 10 s and on
+  close. On restore it is replayed into the scrollback, above an empty screen,
+  because ConPTY starts every shell by clearing the screen and drawing from the
+  top-left.
+- **Agent session.** A backend thread (`agents.rs`) walks the process tree
+  below each shell every 4 s. Claude Code is recognized by the
+  `~/.claude/sessions/<pid>.json` file it writes about itself; Codex by its
+  `codex.exe` process and the `~/.codex/sessions` rollout file touched since
+  that process started. On restore the terminal runs the agent's native resume
+  command. Session ids are validated before they are stored and again before
+  they are typed into a shell.
+- **Running command.** PowerShell integration reports each submitted command
+  line; the one still running at save time is typed again on restore.
+
+A periodic save matters more than the save on close: when Windows shuts down,
+the app is killed without a chance to flush. For the same reason an agent or
+command that disappears is only forgotten after a short grace period, so that
+being killed moments before Wmux during shutdown does not erase it.
 
 ### Shell integration
 
 With "Shell integration" on, PowerShell is started with
 `-NoExit -EncodedCommand <script>`. The script wraps the user's existing
-`prompt` function to emit `OSC 9;9;"<cwd>"`. For cmd, `PROMPT` is set only
+`prompt` function to emit `OSC 9;9;"<cwd>"` and `OSC 7717;P` (prompt shown),
+and wraps PSReadLine's `PSConsoleHostReadLine` to emit
+`OSC 7717;C;<base64 command line>` when a command is submitted. For cmd, `PROMPT` is set only
 if the user has not defined one. The frontend also understands `OSC 7`
 (bash/zsh/fish/msys). The reported directory drives the status bar, new
 splits/tabs ("open here") and restore.

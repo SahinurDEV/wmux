@@ -118,7 +118,9 @@ export function App() {
     let unlisten: (() => void) | undefined;
     void getCurrentWindow()
       .onCloseRequested(async () => {
+        // Layout first: terminal state rows are tied to the saved surfaces.
         await flushSave();
+        await terminals.flushState();
       })
       .then((u) => (unlisten = u));
     return () => unlisten?.();

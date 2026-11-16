@@ -17,7 +17,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rusqlite::{params, Connection, OptionalExtension, Transaction};
 use serde::{Deserialize, Serialize};
 
-const MIGRATIONS: &[(i64, &str)] = &[(1, include_str!("../migrations/0001_initial.sql"))];
+const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../migrations/0001_initial.sql")),
+    (2, include_str!("../migrations/0002_terminal_restore.sql")),
+];
+
+/// Upper bound for one terminal's saved scrollback (bytes of VT text).
+pub const MAX_SCROLLBACK_BYTES: usize = 4 * 1024 * 1024;
+/// Upper bound for a remembered command line.
+pub const MAX_COMMAND_BYTES: usize = 8 * 1024;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
@@ -63,6 +71,50 @@ pub struct LastRun {
     pub started_at: Option<i64>,
     pub exit_code: Option<i64>,
     pub exited_at: Option<i64>,
+}
+
+/// A coding agent session that was running in a terminal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentRecord {
+    /// `"claude"` or `"codex"`.
+    pub kind: String,
+    /// The agent's own session id (used with its native resume command).
+    pub session_id: String,
+    /// Directory the agent was started in.
+    #[serde(default)]
+    pub cwd: Option<String>,
+}
+
+/// Everything saved to bring one terminal back after a restart.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreRecord {
+    pub scrollback: Option<String>,
+    pub agent: Option<AgentRecord>,
+    /// Command that was still running when the terminal was last saved.
+    pub running_command: Option<String>,
+}
+
+/// Restore state owned by the UI for one terminal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalState {
+    pub surface_id: String,
+    /// Serialized buffer; `None` keeps what is already stored.
+    #[serde(default)]
+    pub scrollback: Option<String>,
+    #[serde(default)]
+    pub running_command: Option<String>,
+}
+
+/// Agent session ids end up typed into a shell, so only plain id characters
+/// are ever accepted.
+pub fn is_safe_session_id(id: &str) -> bool {
+    (8..=128).contains(&id.len())
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -318,6 +370,10 @@ impl Store {
             "DELETE FROM terminal_runs WHERE surface_id NOT IN (SELECT value FROM json_each(?1))",
             [serde_json::to_string(&surface_ids).expect("string list serializes")],
         )?;
+        tx.execute(
+            "DELETE FROM terminal_restore WHERE surface_id NOT IN (SELECT value FROM json_each(?1))",
+            [serde_json::to_string(&surface_ids).expect("string list serializes")],
+        )?;
 
         set_state(&tx, "active_workspace_id", &snap.active_workspace_id)?;
         set_state(&tx, "ui", &snap.ui)?;
@@ -467,6 +523,113 @@ impl Store {
             &serde_json::json!({"code": code}),
         )?;
         Ok(())
+    }
+
+    // ------------------------------------------------------ terminal restore
+
+    /// Save UI-owned restore state of several terminals in one transaction.
+    /// Oversized entries are rejected rather than truncated mid-sequence.
+    pub fn save_terminal_state(&mut self, items: &[TerminalState]) -> Result<()> {
+        let now = now_ms();
+        let tx = self.conn.transaction()?;
+        for item in items {
+            if item.surface_id.is_empty() || item.surface_id.len() > 128 {
+                return Err(StoreError::Invalid("surface id has invalid length".into()));
+            }
+            if item
+                .running_command
+                .as_ref()
+                .is_some_and(|c| c.len() > MAX_COMMAND_BYTES)
+            {
+                return Err(StoreError::Invalid("running command is too long".into()));
+            }
+            tx.execute(
+                "INSERT INTO terminal_restore (surface_id, running_command) VALUES (?1, ?2)
+                 ON CONFLICT(surface_id) DO UPDATE SET running_command=excluded.running_command",
+                params![item.surface_id, item.running_command],
+            )?;
+            // `None` leaves the stored scrollback untouched.
+            if let Some(data) = &item.scrollback {
+                if data.len() > MAX_SCROLLBACK_BYTES {
+                    return Err(StoreError::Invalid(format!(
+                        "scrollback for {} is too large ({} bytes)",
+                        item.surface_id,
+                        data.len()
+                    )));
+                }
+                tx.execute(
+                    "UPDATE terminal_restore SET scrollback = ?2, scrollback_at = ?3 WHERE surface_id = ?1",
+                    params![item.surface_id, data, now],
+                )?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Record (or with `None`, forget) the agent session running in a terminal.
+    pub fn set_agent(&self, surface_id: &str, agent: Option<&AgentRecord>) -> Result<()> {
+        match agent {
+            Some(a) => {
+                if !is_safe_session_id(&a.session_id) {
+                    return Err(StoreError::Invalid("agent session id is not valid".into()));
+                }
+                self.conn.execute(
+                    "INSERT INTO terminal_restore (surface_id, agent, agent_session_id, agent_cwd, agent_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5)
+                     ON CONFLICT(surface_id) DO UPDATE SET agent=excluded.agent,
+                        agent_session_id=excluded.agent_session_id, agent_cwd=excluded.agent_cwd,
+                        agent_at=excluded.agent_at",
+                    params![surface_id, a.kind, a.session_id, a.cwd, now_ms()],
+                )?;
+            }
+            None => {
+                self.conn.execute(
+                    "UPDATE terminal_restore SET agent=NULL, agent_session_id=NULL, agent_cwd=NULL,
+                        agent_at=?2 WHERE surface_id = ?1",
+                    params![surface_id, now_ms()],
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn get_restore(&self, surface_id: &str) -> Result<RestoreRecord> {
+        let row = self
+            .conn
+            .query_row(
+                "SELECT scrollback, agent, agent_session_id, agent_cwd, running_command FROM terminal_restore
+                 WHERE surface_id = ?1",
+                [surface_id],
+                |r| {
+                    Ok((
+                        r.get::<_, Option<String>>(0)?,
+                        r.get::<_, Option<String>>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                        r.get::<_, Option<String>>(3)?,
+                        r.get::<_, Option<String>>(4)?,
+                    ))
+                },
+            )
+            .optional()?;
+        let Some((scrollback, kind, session_id, cwd, running_command)) = row else {
+            return Ok(RestoreRecord::default());
+        };
+        let agent = match (kind, session_id) {
+            (Some(kind), Some(session_id)) if is_safe_session_id(&session_id) => {
+                Some(AgentRecord {
+                    kind,
+                    session_id,
+                    cwd,
+                })
+            }
+            _ => None,
+        };
+        Ok(RestoreRecord {
+            scrollback,
+            agent,
+            running_command,
+        })
     }
 
     // --------------------------------------------------------------- history

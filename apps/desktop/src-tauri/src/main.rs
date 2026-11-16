@@ -1,9 +1,11 @@
 // Hide the console window in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod agents;
 mod commands;
 mod shells;
 
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -44,11 +46,23 @@ fn main() {
                 log::error!("database was unusable and moved to {}", from.display());
             }
             let _ = store.prune_history(10_000);
+            let processes = Arc::new(ProcessManager::new());
+            let store = Arc::new(Mutex::new(store));
+            // Remembers which Claude/Codex session runs in which terminal so it
+            // can be resumed after a restart.
+            let agent_scan_stop = match app.path().home_dir() {
+                Ok(home) => agents::start_scanner(Arc::clone(&processes), Arc::clone(&store), home),
+                Err(e) => {
+                    log::warn!("no home directory ({e}); agent sessions will not be resumed");
+                    Arc::default()
+                }
+            };
             app.manage(AppState {
-                processes: Arc::new(ProcessManager::new()),
-                store: Arc::new(Mutex::new(store)),
+                processes,
+                store,
                 db: outcome,
                 data_dir,
+                agent_scan_stop,
             });
 
             // The window starts hidden to avoid a white flash; the frontend shows
@@ -68,8 +82,12 @@ fn main() {
         .on_window_event(|window, event| {
             if let WindowEvent::Destroyed = event {
                 if window.label() == "main" {
+                    let state = window.state::<AppState>();
+                    // Stop the scan first so the agents killed below are not
+                    // recorded as "exited" and forgotten.
+                    state.agent_scan_stop.store(true, Ordering::Relaxed);
                     // Kill all terminal process trees on exit.
-                    window.state::<AppState>().processes.shutdown_all();
+                    state.processes.shutdown_all();
                 }
             }
         })
@@ -85,6 +103,8 @@ fn main() {
             commands::pty_list,
             commands::session_load,
             commands::session_save,
+            commands::terminal_restore_get,
+            commands::terminal_state_save,
             commands::settings_get,
             commands::settings_set,
             commands::db_backup,
