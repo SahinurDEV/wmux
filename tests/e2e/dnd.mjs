@@ -51,8 +51,18 @@ async function launch() {
     stdio: ["ignore", "inherit", "inherit"],
   });
   const exited = new Promise((r) => child.on("exit", r));
-  await waitFor(async () => (await fetch(`http://127.0.0.1:${port}/json/version`)).ok, "WebView2 DevTools endpoint");
-  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  const endpoint = await waitFor(
+    async () => {
+      for (const host of ["127.0.0.1", "localhost", "[::1]"]) {
+        const url = `http://${host}:${port}`;
+        if (await fetch(`${url}/json/version`).then((r) => r.ok, () => false)) return url;
+      }
+      return null;
+    },
+    "WebView2 DevTools endpoint",
+    90_000,
+  );
+  const browser = await chromium.connectOverCDP(endpoint);
   page = await waitFor(
     () => browser.contexts().flatMap((c) => c.pages()).find((p) => /tauri\.localhost|localhost:1420/.test(p.url())),
     "app page",
