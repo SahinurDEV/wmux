@@ -67,7 +67,7 @@
       </table>
     </div>
     <p>All files are on the <a href="https://github.com/SahinurDEV/wmux/releases/latest">latest release page</a>. To check that a download is intact, compare its hash with <code>SHA256SUMS.txt</code> from the same release:</p>
-    <pre><code>Get-FileHash .\Wmux_0.2.0_x64-setup.exe -Algorithm SHA256</code></pre>
+    <pre><code>Get-FileHash .\Wmux_0.3.0_x64-setup.exe -Algorithm SHA256</code></pre>
     <div class="callout">
       <strong>Smart App Control.</strong> On Windows 11 PCs where Smart App Control is on, unsigned apps are blocked with no “Run anyway” option. Until Wmux is signed, it can only run there if you turn Smart App Control off (Windows Security → App &amp; browser control).
     </div>
@@ -107,6 +107,7 @@
           <tr><td>Split right / split down</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>D</kbd> / <kbd>E</kbd></td></tr>
           <tr><td>Maximize or restore the pane</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
           <tr><td>Focus the pane in a direction</td><td><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Arrow</kbd></td></tr>
+          <tr><td>Swap the pane with its neighbor</td><td><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>Arrow</kbd></td></tr>
           <tr><td>Search terminal output</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></td></tr>
           <tr><td>Restart terminal / clear</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>R</kbd> / <kbd>K</kbd></td></tr>
           <tr><td>Bigger / smaller / reset font</td><td><kbd>Ctrl</kbd> <kbd>=</kbd> / <kbd>-</kbd> / <kbd>0</kbd></td></tr>
@@ -128,6 +129,18 @@
       <li>startup commands, run in the workspace's first terminal when it opens,</li>
       <li>environment variables for its terminals.</li>
     </ul>
+
+    <h3>Moving terminals</h3>
+    <p>Drag a tab to rearrange things. The terminal keeps running while it moves.</p>
+    <ul>
+      <li>Onto another pane's tab strip: the tab joins that pane, at the position you drop it.</li>
+      <li>Onto the left, right, top or bottom part of a pane: the tab becomes a new pane on that side.</li>
+      <li>Onto a workspace in the sidebar: the tab moves to that workspace.</li>
+    </ul>
+    <p>The pane menu can send a whole pane, with all its tabs, to another workspace. <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>Arrow</kbd> swaps the focused pane with its neighbor. Press <kbd>Esc</kbd> to cancel a drag.</p>
+
+    <h3>Agents</h3>
+    <p>When Claude Code, Codex, Gemini CLI, OpenCode or Aider runs in a terminal, its tab shows an agent icon: pulsing while the agent is <strong>working</strong>, amber when it is <strong>waiting for you</strong>, green when it is <strong>idle</strong>. The workspace in the sidebar and the status bar show the same. Claude Code reports its own status; for the other agents, recent terminal output counts as working.</p>
 
     <h2 id="session-restore">Session restore</h2>
     <p>When you open Wmux again, after closing it or after the PC restarted, each terminal comes back in its workspace, pane, tab and folder. On top of the layout, three things are restored.</p>
