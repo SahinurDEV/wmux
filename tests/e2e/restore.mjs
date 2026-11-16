@@ -17,6 +17,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { chromium } from "playwright-core";
+import { devtoolsEndpoint, devtoolsEnv } from "./devtools.mjs";
 
 const args = process.argv.slice(2);
 const withAgent = args.includes("--agent");
@@ -59,30 +60,18 @@ let current = null;
 let currentPage = null;
 
 async function launch() {
-  const port = 9300 + Math.floor(Math.random() * 500);
   const child = spawn(exe, [], {
     env: {
       ...cleanEnv,
       WMUX_E2E: "1",
       WMUX_DATA_DIR: dataDir,
-      WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
+      ...devtoolsEnv(dataDir)
     },
     stdio: ["ignore", "inherit", "inherit"],
   });
   const exited = new Promise((r) => child.on("exit", r));
   current = child;
-  // The endpoint may listen on IPv4 or IPv6 loopback depending on the WebView2 runtime.
-  const endpoint = await waitFor(
-    async () => {
-      for (const host of ["127.0.0.1", "localhost", "[::1]"]) {
-        const url = `http://${host}:${port}`;
-        if (await fetch(`${url}/json/version`).then((r) => r.ok, () => false)) return url;
-      }
-      return null;
-    },
-    "WebView2 DevTools endpoint",
-    90_000,
-  );
+  const endpoint = await devtoolsEndpoint(dataDir, child);
   const browser = await chromium.connectOverCDP(endpoint);
   const page = await waitFor(
     () => browser.contexts().flatMap((c) => c.pages()).find((p) => /tauri\.localhost|localhost:1420/.test(p.url())),

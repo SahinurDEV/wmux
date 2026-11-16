@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { chromium } from "playwright-core";
+import { devtoolsEndpoint, devtoolsEnv } from "../tests/e2e/devtools.mjs";
 
 const exe = resolve(process.argv[2] ?? "target/release/wmux-desktop.exe");
 const out = resolve("site/assets");
@@ -45,14 +46,12 @@ async function waitFor(fn, what, timeoutMs = 60_000) {
 let child = null;
 let livePage = null;
 async function launch() {
-  const port = 9300 + Math.floor(Math.random() * 500);
   child = spawn(exe, [], {
-    env: { ...env, WMUX_E2E: "1", WMUX_DATA_DIR: dataDir, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}` },
+    env: { ...env, WMUX_E2E: "1", WMUX_DATA_DIR: dataDir, ...devtoolsEnv(dataDir) },
     stdio: "ignore",
   });
   const exited = new Promise((r) => child.on("exit", r));
-  await waitFor(async () => (await fetch(`http://127.0.0.1:${port}/json/version`)).ok, "DevTools endpoint");
-  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+  const browser = await chromium.connectOverCDP(await devtoolsEndpoint(dataDir, child));
   const page = await waitFor(
     () => browser.contexts().flatMap((c) => c.pages()).find((p) => /tauri\.localhost/.test(p.url())),
     "app page",
