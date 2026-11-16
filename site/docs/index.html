@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started — Wmux docs</title>
+<meta name="description" content="Install Wmux on Windows, create your first workspace, and learn how session restore, shell integration, shortcuts and settings work.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/logo.png" alt="" width="28" height="28">Wmux</a>
+    <nav class="nav-links" aria-label="Main">
+      <a class="hide-sm" href="../#features">Features</a>
+      <a href="./" aria-current="page">Docs</a>
+      <a href="https://github.com/SahinurDEV/wmux">GitHub</a>
+      <a class="btn btn-primary btn-sm" data-download href="https://github.com/SahinurDEV/wmux/releases/latest">Download</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs">
+  <nav class="side" aria-label="Docs">
+    <h4>Basics</h4>
+    <a href="#install">Install</a>
+    <a href="#verify">Verify the installation</a>
+    <a href="#first-steps">First steps</a>
+    <a href="#shortcuts">Keyboard shortcuts</a>
+    <h4>Workspaces</h4>
+    <a href="#workspaces">Workspaces and panes</a>
+    <a href="#session-restore">Session restore</a>
+    <a href="#shell-integration">Shell integration</a>
+    <h4>Customize</h4>
+    <a href="#settings">Settings</a>
+    <a href="#data">Your data</a>
+    <h4>Reference</h4>
+    <a href="#updates">Updates</a>
+    <a href="#requirements">Requirements</a>
+    <a href="#build">Build from source</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+  </nav>
+
+  <main class="doc">
+    <h1>Getting started</h1>
+    <p class="intro">Wmux is a Windows app that keeps the terminals, dev servers and coding agents of each project together in one window, and brings them back after a restart. This page takes you from download to a working setup.</p>
+
+    <h2 id="install">Install</h2>
+    <h3>Installer (recommended)</h3>
+    <p><a class="btn btn-primary btn-sm" data-download href="https://github.com/SahinurDEV/wmux/releases/latest">Download Wmux <span data-version>v0.2.0</span></a></p>
+    <ol>
+      <li>Run <code>Wmux_&lt;version&gt;_x64-setup.exe</code>. It installs for your user only, so it does not ask for administrator rights.</li>
+      <li>If SmartScreen shows “Windows protected your PC”, choose <strong>More info → Run anyway</strong>. Wmux is not code-signed yet.</li>
+      <li>Start <strong>Wmux</strong> from the Start menu.</li>
+    </ol>
+    <h3>Other downloads</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>File</th><th>Use it if</th></tr></thead>
+        <tbody>
+          <tr><td><code>Wmux_&lt;version&gt;_x64_en-US.msi</code></td><td>You deploy software with MSI or Group Policy.</td></tr>
+          <tr><td><code>Wmux-portable-x64.zip</code></td><td>You want no installation. Unzip it anywhere and run <code>Wmux.exe</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>All files are on the <a href="https://github.com/SahinurDEV/wmux/releases/latest">latest release page</a>. To check that a download is intact, compare its hash with <code>SHA256SUMS.txt</code> from the same release:</p>
+    <pre><code>Get-FileHash .\Wmux_0.2.0_x64-setup.exe -Algorithm SHA256</code></pre>
+    <div class="callout">
+      <strong>Smart App Control.</strong> On Windows 11 PCs where Smart App Control is on, unsigned apps are blocked with no “Run anyway” option. Until Wmux is signed, it can only run there if you turn Smart App Control off (Windows Security → App &amp; browser control).
+    </div>
+
+    <h2 id="verify">Verify the installation</h2>
+    <p>On first launch you should see:</p>
+    <ul>
+      <li>A sidebar with one workspace, <strong>Workspace 1</strong>.</li>
+      <li>One terminal with a prompt in your home folder, running your default shell (PowerShell 7 if it is installed, otherwise Windows PowerShell).</li>
+      <li>A status bar showing <strong>Running</strong>, the current folder, the shell and the version.</li>
+    </ul>
+    <p>Type a command to confirm the shell responds. If the terminal shows an error instead of a prompt, see <a href="#troubleshooting">Troubleshooting</a>.</p>
+
+    <h2 id="first-steps">First steps</h2>
+    <ol>
+      <li><strong>Open a project.</strong> Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>O</kbd> and pick a folder. Wmux creates a workspace named after it, with a terminal already in that folder.</li>
+      <li><strong>Split the pane.</strong> <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>D</kbd> splits right and <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>E</kbd> splits down. The new terminal opens in the folder you were in.</li>
+      <li><strong>Start what you need.</strong> A dev server in one pane, tests in another, <code>claude</code> or <code>codex</code> in a third.</li>
+      <li><strong>Close Wmux and open it again.</strong> Everything is where you left it. See <a href="#session-restore">Session restore</a>.</li>
+    </ol>
+    <div class="shot"><img src="../assets/workspace.png" width="1400" height="880" loading="lazy" alt="A Wmux workspace with three terminal panes."></div>
+    <p>You do not need to remember shortcuts. <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd> opens the command palette, where you can search for any action.</p>
+
+    <h2 id="shortcuts">Keyboard shortcuts</h2>
+    <div class="table-scroll">
+      <table class="keys">
+        <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+        <tbody>
+          <tr><td>Command palette</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd></td></tr>
+          <tr><td>New workspace</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>N</kbd></td></tr>
+          <tr><td>Open folder as workspace</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>O</kbd></td></tr>
+          <tr><td>Close workspace</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>W</kbd></td></tr>
+          <tr><td>Next / previous workspace</td><td><kbd>Ctrl</kbd> <kbd>Tab</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd></td></tr>
+          <tr><td>Switch to workspace 1–9</td><td><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>9</kbd></td></tr>
+          <tr><td>New terminal tab / close tab</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>T</kbd> / <kbd>Q</kbd></td></tr>
+          <tr><td>Next / previous tab</td><td><kbd>Ctrl</kbd> <kbd>PageDown</kbd> / <kbd>PageUp</kbd></td></tr>
+          <tr><td>Split right / split down</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>D</kbd> / <kbd>E</kbd></td></tr>
+          <tr><td>Maximize or restore the pane</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td></tr>
+          <tr><td>Focus the pane in a direction</td><td><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Arrow</kbd></td></tr>
+          <tr><td>Search terminal output</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></td></tr>
+          <tr><td>Restart terminal / clear</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>R</kbd> / <kbd>K</kbd></td></tr>
+          <tr><td>Bigger / smaller / reset font</td><td><kbd>Ctrl</kbd> <kbd>=</kbd> / <kbd>-</kbd> / <kbd>0</kbd></td></tr>
+          <tr><td>Toggle sidebar</td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>B</kbd></td></tr>
+          <tr><td>Settings</td><td><kbd>Ctrl</kbd> <kbd>,</kbd></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><kbd>Ctrl</kbd> <kbd>C</kbd> copies when text is selected and interrupts the running command otherwise. <kbd>Ctrl</kbd> <kbd>V</kbd> pastes. Right-click copies the selection, or pastes if nothing is selected.</p>
+    <p>Change any shortcut under <strong>Settings → Keyboard</strong>.</p>
+
+    <h2 id="workspaces">Workspaces and panes</h2>
+    <p>A <strong>workspace</strong> is one project: a name, a color, a folder, and a layout of panes. The sidebar lists them, and <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>9</kbd> jumps straight to one. Terminals in other workspaces keep running while you look at this one.</p>
+    <p>A <strong>pane</strong> is a rectangle in the layout. Split it to make more, drag the divider between two panes to resize them, and use the pane's buttons to split, maximize or close it. Each pane holds one or more <strong>tabs</strong>, and each tab is a terminal.</p>
+    <p>Use a workspace's menu in the sidebar, or the command palette, to rename, duplicate, pin or delete it. <strong>Workspace Settings</strong> lets you set, per workspace:</p>
+    <ul>
+      <li>the folder new terminals start in,</li>
+      <li>the shell to use,</li>
+      <li>startup commands, run in the workspace's first terminal when it opens,</li>
+      <li>environment variables for its terminals.</li>
+    </ul>
+
+    <h2 id="session-restore">Session restore</h2>
+    <p>When you open Wmux again, after closing it or after the PC restarted, each terminal comes back in its workspace, pane, tab and folder. On top of the layout, three things are restored.</p>
+    <div class="shot"><img src="../assets/restored.png" width="1400" height="880" loading="lazy" alt="Wmux after a restart, showing restored terminal text and a re-run dev server."></div>
+    <h3>Terminal text</h3>
+    <p>The screen and scrollback of each terminal are saved every 10 seconds and when the window closes. A restored terminal shows that text, then a <code>session restored</code> line, then a new prompt.</p>
+    <h3>Agent sessions</h3>
+    <p>While <strong>Claude Code</strong> or <strong>Codex</strong> runs in a terminal, Wmux records the agent's own session id. After a restart it runs the agent's resume command in that terminal, in the folder the agent was started in:</p>
+    <pre><code>claude --resume &lt;session id&gt;
+codex resume &lt;session id&gt;</code></pre>
+    <p>Nothing is installed into the agents and no hooks are needed. Wmux reads what the agents already record about their running sessions.</p>
+    <h3>Running commands</h3>
+    <p>If a command was still running when Wmux closed, such as a dev server or a file watcher, it is started again. A command that had finished is not repeated. This needs PowerShell with <a href="#shell-integration">shell integration</a> turned on.</p>
+    <h3>What is not restored</h3>
+    <ul>
+      <li><strong>The process itself.</strong> No terminal can keep a program alive through a reboot. Wmux starts a new shell and brings it to where the old one stopped. Unsaved state inside a program, such as an editor buffer or a REPL's variables, is gone.</li>
+      <li><strong>Commands in cmd, Git Bash and WSL</strong> are not re-run. Their text and folder are restored.</li>
+      <li><strong>Agents running inside WSL</strong> are not detected.</li>
+      <li><strong>Multi-line commands</strong> are not re-run.</li>
+      <li>With several Codex sessions open at once, matching each session to its terminal is best effort.</li>
+    </ul>
+    <div class="callout info">
+      <strong>Commands that must not repeat.</strong> Re-running applies only to a command that was still in progress. If you sometimes leave commands running that would be harmful to start a second time, turn off <strong>Settings → Terminal → Re-run running commands</strong>.
+    </div>
+
+    <h2 id="shell-integration">Shell integration</h2>
+    <p>Shell integration lets the shell tell Wmux which folder it is in and which command is running. It powers “open the new split in this folder”, the folder in the status bar, and re-running commands after a restart.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Shell</th><th>Current folder</th><th>Running command</th></tr></thead>
+        <tbody>
+          <tr><td>PowerShell 7, Windows PowerShell</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>cmd</td><td>Yes, unless you set your own <code>PROMPT</code></td><td>No</td></tr>
+          <tr><td>Git Bash, WSL</td><td>If your shell emits <code>OSC 7</code></td><td>No</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>In PowerShell it wraps your existing <code>prompt</code> function, so your own prompt and theme are kept. Turn it off under <strong>Settings → Terminal → Shell integration</strong>.</p>
+
+    <h2 id="settings">Settings</h2>
+    <p>Open settings with <kbd>Ctrl</kbd> <kbd>,</kbd>. Changes apply immediately.</p>
+    <div class="shot"><img src="../assets/settings.png" width="1400" height="880" loading="lazy" alt="The Terminal tab of Wmux settings, including the three session restore options."></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Tab</th><th>What you can change</th></tr></thead>
+        <tbody>
+          <tr><td>General</td><td>Whether closing a workspace asks for confirmation.</td></tr>
+          <tr><td>Appearance</td><td>Dark, light or system theme; accent color; terminal font, size and line height.</td></tr>
+          <tr><td>Terminal</td><td>Default shell, shell integration, the three restore options, cursor, scrollback length, copy on select, GPU rendering.</td></tr>
+          <tr><td>Keyboard</td><td>Every shortcut.</td></tr>
+          <tr><td>Advanced</td><td>Where the database is, and the app version.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="data">Your data</h2>
+    <p>Workspaces, settings and saved terminal text live in one SQLite file on your PC:</p>
+    <pre><code>%APPDATA%\dev.wmux.desktop\wmux.db</code></pre>
+    <p>Nothing is sent anywhere. Saved terminal text is whatever was on screen, so it can contain anything you printed there. To keep terminal text out of the file, turn off <strong>Restore terminal text</strong>.</p>
+    <p>Set the <code>WMUX_DATA_DIR</code> environment variable before starting Wmux to keep the data somewhere else, for example next to a portable copy. If the database cannot be read, Wmux moves it aside, starts fresh and tells you where the old file went.</p>
+
+    <h2 id="updates">Updates</h2>
+    <p>Wmux does not update itself yet. To update, download the newest installer from the <a href="https://github.com/SahinurDEV/wmux/releases/latest">releases page</a> and run it over the existing installation. Your workspaces and settings are kept. The <a href="https://github.com/SahinurDEV/wmux/blob/main/CHANGELOG.md">changelog</a> lists what changed.</p>
+
+    <h2 id="requirements">Requirements</h2>
+    <ul>
+      <li>Windows 10 version 1809 or later, or Windows 11.</li>
+      <li>A 64-bit Intel or AMD processor (x64). ARM64 builds are planned.</li>
+      <li>The Microsoft Edge WebView2 runtime. It is part of Windows 11; on Windows 10 the installer downloads it if it is missing. The portable ZIP does not install it for you.</li>
+    </ul>
+
+    <h2 id="build">Build from source</h2>
+    <p>You need <a href="https://rustup.rs">Rust</a> (stable, MSVC toolchain), Node.js 22 or later, <a href="https://pnpm.io">pnpm</a> 9, and Visual Studio Build Tools with the “Desktop development with C++” workload.</p>
+    <pre><code>git clone https://github.com/SahinurDEV/wmux.git
+cd wmux
+pnpm install
+pnpm dev      # run the app with hot reload
+pnpm build    # installers in target/release/bundle
+pnpm test     # frontend and Rust tests</code></pre>
+    <p><code>pnpm dev</code> runs under its own app identity, so it does not touch the data of an installed Wmux.</p>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <h3>“Windows protected your PC”</h3>
+    <p>Choose <strong>More info → Run anyway</strong>. This appears because the app is not code-signed yet.</p>
+    <h3>The app is blocked with no way to run it</h3>
+    <p>Smart App Control is on. See the note under <a href="#install">Install</a>.</p>
+    <h3>A terminal says “Failed to start shell”</h3>
+    <p>The shell chosen for that terminal is not available. Press <kbd>Enter</kbd> to retry, or pick another shell from the tab's menu or under <strong>Settings → Terminal → Default shell</strong>.</p>
+    <h3>An agent session did not resume</h3>
+    <p>The agent must have been running for a few seconds before Wmux closed, and its command (<code>claude</code> or <code>codex</code>) must be on your <code>PATH</code>. A session with no messages in it has nothing to resume. Check that <strong>Resume agent sessions</strong> is on.</p>
+    <h3>A command was not re-run</h3>
+    <p>Re-running works in PowerShell with shell integration on, for single-line commands that were still running when Wmux closed.</p>
+    <h3>Something else</h3>
+    <p><a href="https://github.com/SahinurDEV/wmux/issues">Open an issue</a> and include the Wmux version from the status bar.</p>
+
+    <div class="pager">
+      <a href="../">← Home</a>
+      <a href="https://github.com/SahinurDEV/wmux/blob/main/docs/ARCHITECTURE.md">Architecture →</a>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/logo.png" alt="" width="28" height="28">Wmux</a>
+    <a href="https://github.com/SahinurDEV/wmux/releases">Releases</a>
+    <a href="https://github.com/SahinurDEV/wmux/issues">Report an issue</a>
+    <a href="https://github.com/SahinurDEV/wmux/blob/main/LICENSE">MIT License</a>
+    <p>Wmux is an independent open-source project inspired by the workflow of tools like cmux. It shares no code, branding or assets with them and is not affiliated with them.</p>
+  </div>
+</footer>
+
+<script src="../release.js" defer></script>
+<script>
+  // Highlight the section being read in the sidebar.
+  const links = [...document.querySelectorAll(".side a")];
+  const byId = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+  const seen = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        links.forEach((a) => a.classList.remove("active"));
+        byId.get(e.target.id)?.classList.add("active");
+      }
+    },
+    { rootMargin: "-90px 0px -65% 0px" },
+  );
+  document.querySelectorAll(".doc h2[id]").forEach((h) => seen.observe(h));
+</script>
+</body>
+</html>

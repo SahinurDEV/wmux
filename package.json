@@ -8,6 +8,7 @@
     "test": "pnpm --filter @wmux/desktop test && cargo test --workspace",
     "test:e2e": "node tests/e2e/run.mjs",
     "test:e2e:restore": "node tests/e2e/restore.mjs",
+    "site:screenshots": "node scripts/site-screenshots.mjs",
     "typecheck": "pnpm --filter @wmux/desktop typecheck"
   },
   "devDependencies": {

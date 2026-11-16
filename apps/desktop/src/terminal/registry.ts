@@ -66,6 +66,8 @@ const COMMAND_SAVE_DEBOUNCE_MS = 800;
  */
 const COMMAND_CLEAR_GRACE_MS = 3_000;
 /** Lines of history kept per terminal, and a size bound for the saved text. */
+/** Wait for the new shell to draw its first prompt before revealing history. */
+const RESTORE_REVEAL_DELAY_MS = 900;
 const SAVE_MAX_LINES = 5_000;
 const SAVE_MAX_CHARS = 1_200_000;
 
@@ -165,7 +167,10 @@ function create(surfaceId: string): Entry {
       }, 25);
     }),
     term.onTitleChange((title) => {
-      if (title.trim()) store().renameSurface(surfaceId, title.trim(), false);
+      const clean = title.trim();
+      // Shells title themselves with their full exe path; show just the name.
+      const exe = /^[A-Za-z]:\\.*\\([^\\]+)\.exe$/i.exec(clean);
+      if (clean) store().renameSurface(surfaceId, exe ? exe[1]! : clean, false);
     }),
     term.onSelectionChange(() => {
       if (store().settings.copyOnSelect && term.hasSelection()) {
@@ -475,13 +480,15 @@ export async function start(surfaceId: string): Promise<void> {
   // previous session saved (text, agent conversation, running command).
   let action: ReturnType<typeof restoreAction> = null;
   let agentCwd: string | null = null;
+  let replayedText = false;
   if (!entry.restored) {
     const saved = await loadRestore(surfaceId);
     if (entry.generation !== generation) return;
     if (saved) {
       action = restoreAction(saved, s.settings);
       const notice = action && `${action.kind === "agent" ? "Resuming agent session" : "Re-running"}: ${action.command}`;
-      await replayScrollback(entry, s.settings.restoreScrollback ? saved.scrollback : null, notice);
+      replayedText = s.settings.restoreScrollback && !!saved.scrollback;
+      await replayScrollback(entry, replayedText ? saved.scrollback : null, notice);
       if (action?.kind === "agent") agentCwd = saved.agent?.cwd ?? null;
       // Keep the command remembered until the new shell reports for itself.
       if (action?.kind === "command") {
@@ -544,6 +551,17 @@ export async function start(surfaceId: string): Promise<void> {
     }
     runStartupCommands(entry, ws.id);
     if (action && !exited) enqueue(entry, { kind: "text", data: `${action.command}\r` });
+    // An idle restored terminal opens looking the way it was left: scrolled so
+    // the restored text fills the pane with the new prompt below it. (The first
+    // keystroke or new output returns to the live screen.) When something is
+    // being started again, its live output is what matters, so stay put.
+    if (replayedText && !action && !exited) {
+      window.setTimeout(() => {
+        if (entry.generation === generation && entry.state === "running") {
+          entry.term.scrollLines(-Math.max(entry.term.rows - 3, 0));
+        }
+      }, RESTORE_REVEAL_DELAY_MS);
+    }
   } catch (e) {
     if (entry.generation !== generation) return;
     entry.state = "exited";

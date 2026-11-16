@@ -15,14 +15,14 @@ Workspaces · recursive split panes · real ConPTY shells · session restore
 ![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-24C8DB)
 ![Status: early development](https://img.shields.io/badge/status-early%20development-orange)
 
-[**Download**](https://github.com/SahinurDEV/wmux/releases/latest) · [Features](#features-today) · [Install](#install) · [Build from source](#build-from-source) · [Roadmap](docs/PROGRESS.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
+[**Website**](https://sahinurdev.github.io/wmux/) · [**Download**](https://github.com/SahinurDEV/wmux/releases/latest) · [Docs](https://sahinurdev.github.io/wmux/docs/) · [Features](#features-today) · [Install](#install) · [Build from source](#build-from-source) · [Roadmap](docs/PROGRESS.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-> **Status: early development (v0.1, milestone 1).** Terminals, workspaces,
-> splits and persistence are implemented. AI agents, the embedded browser, Git,
+> **Status: early development (v0.2).** Terminals, workspaces, splits and
+> session restore across restarts are implemented. AI agents, the embedded browser, Git,
 > port monitoring and the `wmux` CLI are on the [roadmap](docs/PROGRESS.md).
 
 Wmux is an independent open-source project inspired by the workflow of tools
@@ -146,6 +146,7 @@ crates/process-manager/   Terminal session threads, I/O and lifecycle
 crates/session-manager/   SQLite schema, migrations, snapshots, backups
 tests/e2e/                Playwright-over-CDP end-to-end test of the real app
 docs/                     Architecture, decisions and progress
+site/                     Website (landing page and docs), published to GitHub Pages
 ```
 
 ## Roadmap

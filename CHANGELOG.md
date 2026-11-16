@@ -13,10 +13,14 @@ Closing Wmux, or shutting down the PC, no longer loses what was in a terminal.
 - **Running commands start again.** With PowerShell shell integration, the
   command that was still running when Wmux closed is re-run. A command that had
   already finished is not.
+- An idle restored terminal opens scrolled so its earlier text fills the pane,
+  with the new prompt below it.
+- Tabs show the shell's name (`pwsh`) instead of the full path of its exe.
 - New settings under Terminal: *Restore terminal text*, *Resume agent
   sessions*, *Re-run running commands* (all on by default).
 - `pnpm dev` now runs under its own app identity, so a development build no
   longer collides with an installed Wmux or touches its data.
+- A website with a getting-started guide lives in `site/`.
 
 Limits: re-running commands needs PowerShell (cmd, Git Bash and WSL restore
 text only); agents running inside WSL are not detected; multi-line commands are
