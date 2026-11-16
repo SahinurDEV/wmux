@@ -189,7 +189,7 @@ pre code {
   color: var(--accent-ink);
 }
 .btn-primary:hover {
-  background: #93a0ff;
+  background: color-mix(in srgb, var(--accent) 84%, white);
 }
 .btn-ghost {
   border-color: var(--line-strong);
@@ -827,28 +827,623 @@ footer p {
   padding-left: 6px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .js :where(.hero .wrap > *, .section-head, .card, .split > *, .table-scroll, .callout, .roadmap li, .final .wrap > *, section > .wrap > .fineprint),
-  .js .hero .shot {
+
+/* ---------------------------------------------------------- interaction */
+/* Top-of-page reading progress. */
+.progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 30;
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  transform: scaleX(var(--p, 0));
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* Motion switch in the nav. Only shown when the script that runs it is there. */
+.motion-toggle {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  font: 500 13px var(--ui);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 5px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.js .motion-toggle {
+  display: inline-flex;
+}
+.motion-toggle:hover {
+  color: var(--fg);
+  border-color: var(--faint);
+}
+.motion-toggle i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+}
+.calm .motion-toggle i {
+  background: var(--faint);
+  box-shadow: none;
+}
+.motion-toggle.nudge {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.nav-links a.active {
+  color: var(--fg);
+}
+
+/* Pointer-reactive dots behind the hero. */
+.hero-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mask-image: linear-gradient(#000 55%, transparent);
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+}
+
+/* Headline words rise one after another. */
+.hero h1 .w {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em) rotate(3deg);
+  animation: word 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(var(--i) * 70ms + 150ms);
+}
+@keyframes word {
+  to {
     opacity: 1;
     transform: none;
-    transition: none;
   }
-  .hero::before,
-  .hero h1 em::after,
-  .pill b::before {
-    animation: none;
+}
+
+/* The hero screenshot leans toward the pointer and catches a highlight. */
+.hero .shot {
+  position: relative;
+}
+.js .hero .shot.in {
+  transform: perspective(1600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.25s ease-out, opacity 0.7s ease;
+}
+.hero .shot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, -30%), rgb(255 255 255 / 0.1), transparent 60%);
+  pointer-events: none;
+}
+
+/* A strip of what runs inside Wmux, scrolling slowly. */
+.marquee {
+  overflow: hidden;
+  padding: 26px 0 0;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: slide 38s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+.marquee span {
+  font: 500 13.5px var(--mono);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+.marquee span b {
+  color: var(--teal);
+  font-weight: 500;
+}
+@keyframes slide {
+  to {
+    transform: translateX(-50%);
   }
-  .card,
-  .card .icon,
-  .split .shot,
-  .btn svg {
-    transition: none;
+}
+
+/* Cards light up under the pointer. */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card:hover::before {
+  opacity: 1;
+}
+.card > * {
+  position: relative;
+}
+
+/* Keys press down when their row is hovered. */
+kbd {
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.keys tr {
+  transition: background 0.15s ease;
+}
+.keys tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.keys tbody tr:hover kbd {
+  transform: translateY(2px);
+  background: color-mix(in srgb, var(--accent) 24%, var(--elev));
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+/* ------------------------------------------------------------ live demos */
+.demo {
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.6);
+  overflow: hidden;
+  font-size: 13px;
+}
+.demo-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+}
+.demo-bar img {
+  width: 16px;
+  height: 16px;
+}
+.demo-bar .grow {
+  flex: 1;
+}
+.demo-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--mono);
+}
+.demo-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+.demo[data-state="off"] .demo-state::before {
+  background: var(--faint);
+}
+.demo[data-state="starting"] .demo-state::before {
+  background: var(--warn);
+}
+.demo-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 300px;
+}
+.demo-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.demo-pane + .demo-pane {
+  border-left: 1px solid var(--line);
+}
+.demo-tab {
+  padding: 6px 12px;
+  font: 500 12px var(--mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.demo-tab i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.demo-tab i.busy {
+  animation: pulse 1.4s ease-out infinite;
+}
+.demo pre {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: 10px 12px;
+  font: 12.5px/1.6 var(--mono);
+  color: #c9cede;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  flex: 1;
+  height: 268px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.demo pre > span {
+  display: block;
+  animation: line 0.25s ease-out;
+}
+@keyframes line {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
-  .card:hover,
-  .card:hover .icon,
-  .split .shot:hover,
-  .btn:hover svg {
-    transform: none;
+}
+.demo .old {
+  color: var(--faint);
+}
+.demo .mark {
+  color: var(--accent);
+}
+.demo .ok {
+  color: var(--ok);
+}
+.demo .note {
+  color: var(--teal);
+}
+.demo .prompt {
+  color: var(--muted);
+}
+.demo-off {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  background: #05060a;
+  color: var(--faint);
+  font: 14px var(--ui);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+.demo-off b {
+  color: var(--muted);
+  font: 600 17px var(--display);
+}
+.demo[data-state="off"] .demo-off,
+.demo[data-state="starting"] .demo-off {
+  opacity: 1;
+  visibility: visible;
+}
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.demo-controls button {
+  font: 600 13.5px var(--ui);
+  border-radius: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--elev);
+  color: var(--fg);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, opacity 0.2s ease;
+}
+.demo-controls button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+.demo-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.demo-controls button.go {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.demo-controls button.go:not(:disabled) {
+  animation: beckon 1.8s ease-in-out infinite;
+}
+@keyframes beckon {
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent);
   }
+}
+.demo-hint {
+  color: var(--faint);
+  font-size: 12.5px;
+  margin-left: auto;
+}
+
+/* A working copy of the command palette. */
+.palette {
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--elev);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.6);
+  overflow: hidden;
+}
+.palette-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+}
+.palette-input svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+.palette-input input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--fg);
+  font: 15px var(--ui);
+}
+.palette-input input::placeholder {
+  color: var(--faint);
+}
+.palette ul {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  height: 292px;
+  overflow: auto;
+}
+.palette li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.palette li small {
+  color: var(--faint);
+  font: 12px var(--mono);
+  width: 86px;
+  flex: none;
+}
+.palette li .keysq {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.palette li mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+.palette li[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.palette li.ran {
+  transform: scale(0.985);
+  background: color-mix(in srgb, var(--teal) 22%, transparent);
+}
+.palette .empty {
+  color: var(--faint);
+  cursor: default;
+}
+.palette-foot {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 9px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 12.5px;
+  min-height: 38px;
+}
+.palette-foot span {
+  white-space: nowrap;
+}
+.palette-foot output {
+  margin-left: auto;
+  color: var(--teal);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dark and light screenshots behind one draggable divider. */
+.compare {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.6);
+  --pos: 50%;
+  touch-action: pan-y;
+}
+.compare img {
+  width: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.compare .top {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 var(--pos));
+}
+.compare .handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pos);
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.compare .handle::after {
+  content: "‹ ›";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 700 15px var(--ui);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.5);
+}
+.compare input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.compare:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.compare .tagl,
+.compare .tagr {
+  position: absolute;
+  bottom: 10px;
+  font: 600 11.5px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  pointer-events: none;
+}
+.compare .tagl {
+  left: 10px;
+}
+.compare .tagr {
+  right: 10px;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.swatches button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--c);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.swatches button:hover {
+  transform: scale(1.15);
+}
+.swatches button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--c);
+}
+@media (max-width: 640px) {
+  .demo-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .demo-pane + .demo-pane {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .demo pre {
+    height: 170px;
+  }
+  .demo-hint {
+    margin-left: 0;
+    width: 100%;
+  }
+  .motion-toggle span {
+    display: none;
+  }
+  .palette li small {
+    display: none;
+  }
+}
+
+/* ----------------------------------------------------------- calm mode */
+/* Set on <html> when motion is switched off: by the visitor with the switch
+   in the nav, or by their system's reduced-motion setting until they choose.
+   Everything is shown in its final state and nothing moves by itself. */
+.calm *,
+.calm *::before,
+.calm *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.calm {
+  scroll-behavior: auto;
+}
+.calm.js :where(.hero .wrap > *, .section-head, .card, .split > *, .table-scroll, .callout, .roadmap li, .final .wrap > *, section > .wrap > .fineprint, .marquee),
+.calm.js .hero .shot,
+.calm .hero h1 .w {
+  opacity: 1;
+  transform: none;
+}
+.calm .card:hover,
+.calm .card:hover .icon,
+.calm .split .shot:hover,
+.calm .btn:hover,
+.calm .btn:hover svg,
+.calm .keys tbody tr:hover kbd {
+  transform: none;
+}
+.calm .hero-fx {
+  display: none;
+}
+.calm .marquee {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+.calm .marquee-track {
+  width: auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.calm .marquee-track [aria-hidden="true"] {
+  display: none;
 }
