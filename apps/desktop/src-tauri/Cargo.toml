@@ -21,7 +21,7 @@ serde.workspace = true
 serde_json.workspace = true
 log.workspace = true
 thiserror.workspace = true
-base64 = "0.22"
+base64 = "0.23"
 wmux-process-manager = { path = "../../../crates/process-manager" }
 wmux-session-manager = { path = "../../../crates/session-manager" }
 
