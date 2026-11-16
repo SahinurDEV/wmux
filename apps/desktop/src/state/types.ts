@@ -66,6 +66,8 @@ export interface TerminalRuntime {
   error?: string;
   cwd?: string;
   profileName?: string;
+  /** When the terminal last produced output (tracked while an agent runs in it). */
+  outputAt?: number;
 }
 
 export interface ShellProfile {

@@ -84,6 +84,10 @@ kept per surface in `terminal_restore`:
   that process started. On restore the terminal runs the agent's native resume
   command. Session ids are validated before they are stored and again before
   they are typed into a shell.
+  The same scan feeds the UI: it publishes the set of live agents (kind, pid,
+  session id, self-reported status) as the `agents-changed` event. Agents
+  installed through npm or pip run inside `node`/`python`, so those are
+  identified by the script path on their command line.
 - **Running command.** PowerShell integration reports each submitted command
   line; the one still running at save time is typed again on restore.
 

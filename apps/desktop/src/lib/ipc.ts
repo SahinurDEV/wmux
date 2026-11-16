@@ -1,5 +1,6 @@
 // Typed wrappers around the Rust commands in src-tauri/src/commands.rs.
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { LastRun, ShellProfile } from "../state/types";
 
 export interface CmdError {
@@ -86,6 +87,17 @@ export interface SessionSnapshot {
   ui: unknown;
 }
 
+/** A coding agent running in a terminal right now (see agents.rs). */
+export interface AgentInfo {
+  /** `claude`, `codex`, `gemini`, `opencode` or `aider`. */
+  kind: string;
+  pid: number;
+  sessionId: string | null;
+  cwd: string | null;
+  /** What the agent reports about itself (`idle`, `busy`, ...), if anything. */
+  status: string | null;
+}
+
 /** A coding agent session that was running in a terminal (see agents.rs). */
 export interface AgentRecord {
   kind: string;
@@ -151,6 +163,10 @@ export const ipc = {
 
   sessionLoad: () => invoke<SessionSnapshot>("session_load"),
   sessionSave: (snapshot: SessionSnapshot) => invoke<void>("session_save", { snapshot }),
+  agentsGet: () => invoke<Record<string, AgentInfo>>("agents_get"),
+  /** Called with all live agents (by surface id) whenever the set changes. */
+  onAgentsChanged: (fn: (agents: Record<string, AgentInfo>) => void): Promise<UnlistenFn> =>
+    listen<Record<string, AgentInfo>>("agents-changed", (e) => fn(e.payload)),
   terminalRestoreGet: (id: string) => invoke<RestoreRecord>("terminal_restore_get", { id }),
   terminalStateSave: (items: TerminalState[]) => invoke<void>("terminal_state_save", { items }),
   settingsGet: () => invoke<Record<string, unknown>>("settings_get"),

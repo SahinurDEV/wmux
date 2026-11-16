@@ -1,5 +1,6 @@
-import { Circle, Folder, Layers, SquareTerminal } from "lucide-react";
+import { Bot, Circle, Folder, Layers, SquareTerminal } from "lucide-react";
 import { focusedSurfaceId } from "../state/actions";
+import { ACTIVITY_LABEL, agentActivity, agentName } from "../state/agents";
 import { activeWorkspace, findSurface, useStore } from "../state/store";
 import { cx } from "./ui";
 
@@ -16,6 +17,9 @@ export function StatusBar() {
   const rt = surfaceId ? runtime[surfaceId] : undefined;
   const cwd = rt?.cwd ?? found?.surface.cwd ?? found?.ws.cwd;
   const running = Object.values(runtime).filter((r) => r.status === "running").length;
+  const agent = useStore((s) => (surfaceId ? s.agents[surfaceId] : undefined));
+  const clock = useStore((s) => s.clock);
+  const activity = agent ? agentActivity(agent, rt?.outputAt, clock) : null;
 
   let statusLabel = "No terminal";
   let statusClass = "text-faint";
@@ -59,6 +63,16 @@ export function StatusBar() {
           <SquareTerminal size={12} />
           {rt.profileName}
           {rt.pid ? <span className="text-faint">PID {rt.pid}</span> : null}
+        </span>
+      )}
+      {agent && activity && (
+        <span
+          className="flex shrink-0 items-center gap-1.5"
+          title={agent.sessionId ? `Session ${agent.sessionId}\nResumed automatically after a restart` : undefined}
+        >
+          <Bot size={12} className={cx(activity === "working" && "text-accent", activity === "waiting" && "text-warning")} />
+          {agentName(agent.kind)}
+          <span className={cx(activity === "waiting" ? "text-warning" : "text-faint")}>{ACTIVITY_LABEL[activity]}</span>
         </span>
       )}
       <span className="flex-1" />

@@ -40,6 +40,18 @@ async function doBoot(): Promise<void> {
       .toast("error", `Your session database could not be read and was moved to ${appInfo.dbRecoveredFrom}. Starting fresh.`);
   }
   await initPersistence();
+  // Agents: current state, then live updates. Not essential to starting up.
+  try {
+    await ipc.onAgentsChanged((agents) => useStore.setState({ agents }));
+    useStore.setState({ agents: await ipc.agentsGet() });
+  } catch (e) {
+    useStore.getState().toast("error", `Agent detection is unavailable: ${errorMessage(e)}`);
+  }
+  // Lets "recent output" expire for agents whose activity is inferred from it.
+  window.setInterval(() => {
+    const { agents } = useStore.getState();
+    if (Object.values(agents).some((a) => !a.status)) useStore.setState({ clock: Date.now() });
+  }, 1500);
   if (appInfo.e2e) {
     Object.assign(window, {
       __wmuxTest: {

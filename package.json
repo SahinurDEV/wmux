@@ -9,6 +9,7 @@
     "test:e2e": "node tests/e2e/run.mjs",
     "test:e2e:restore": "node tests/e2e/restore.mjs",
     "test:e2e:dnd": "node tests/e2e/dnd.mjs",
+    "test:e2e:agents": "node tests/e2e/agents.mjs",
     "site:screenshots": "node scripts/site-screenshots.mjs",
     "typecheck": "pnpm --filter @wmux/desktop typecheck"
   },

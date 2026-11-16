@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppInfo } from "../lib/ipc";
+import type { AgentInfo, AppInfo } from "../lib/ipc";
 import { leaf, newId, paneIds, removePane, resizeSplit, cloneLayout, splitPane, swapPanes } from "./layout";
 import { movePaneToWorkspace as movePaneAcross, moveSurface as moveSurfaceIn, type MoveTarget } from "./move";
 import { ACCENTS, DEFAULT_SETTINGS, type Settings } from "./settings";
@@ -65,6 +65,10 @@ export interface AppStore {
   toasts: Toast[];
   /** In-progress tab drag (not persisted). */
   drag: TabDrag | null;
+  /** Coding agents running in terminals, by surface id (from the backend scan). */
+  agents: Record<string, AgentInfo>;
+  /** Wall clock, advanced periodically so "recent output" can go stale. */
+  clock: number;
 
   // workspaces
   createWorkspace: (opts?: { name?: string; cwd?: string | null }) => string;
@@ -212,6 +216,8 @@ export const useStore = create<AppStore>((set, get) => {
     renamingWorkspaceId: null,
     toasts: [],
     drag: null,
+    agents: {},
+    clock: Date.now(),
 
     createWorkspace: (opts) => {
       const s = get();

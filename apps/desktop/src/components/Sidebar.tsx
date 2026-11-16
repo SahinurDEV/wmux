@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Bot,
   Copy,
   FolderOpen,
   MoreHorizontal,
@@ -12,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { closeWorkspace, openFolderAsWorkspace } from "../state/actions";
+import { ACTIVITY_LABEL, agentActivity, mostUrgent } from "../state/agents";
 import { ACCENTS } from "../state/settings";
 import { useStore } from "../state/store";
 import type { Workspace } from "../state/types";
@@ -139,6 +141,13 @@ function WorkspaceItem({
   const running = surfaces.filter((x) => runtime[x.id]?.status === "running").length;
   const errored = surfaces.some((x) => runtime[x.id]?.status === "error");
   const liveCwd = surfaces.map((x) => runtime[x.id]?.cwd).find(Boolean) ?? ws.cwd;
+  const agents = useStore((st) => st.agents);
+  const clock = useStore((st) => st.clock);
+  const agentStates = surfaces.flatMap((x) => {
+    const a = agents[x.id];
+    return a ? [agentActivity(a, runtime[x.id]?.outputAt, clock)] : [];
+  });
+  const agentState = mostUrgent(agentStates);
 
   const items: MenuItem[] = [
     { label: "Rename", icon: <Pencil size={13} />, onSelect: () => s().setRenaming(ws.id) },
@@ -239,6 +248,21 @@ function WorkspaceItem({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {agentState && (
+            <span
+              data-workspace-agents={agentState}
+              title={`${agentStates.length} agent${agentStates.length === 1 ? "" : "s"} · ${ACTIVITY_LABEL[agentState]}`}
+              className={cx(
+                "flex items-center gap-0.5 text-[10px]",
+                agentState === "working" && "animate-pulse text-accent",
+                agentState === "waiting" && "text-warning",
+                agentState === "idle" && "text-faint",
+              )}
+            >
+              <Bot size={12} />
+              {agentStates.length > 1 && agentStates.length}
+            </span>
+          )}
           {errored && <span className="h-1.5 w-1.5 rounded-full bg-danger" title="A terminal failed to start" />}
           {running > 0 && !errored && (
             <span className="h-1.5 w-1.5 rounded-full bg-success" title={`${running} running`} />

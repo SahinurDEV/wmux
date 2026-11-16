@@ -9,7 +9,7 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use wmux_process_manager::ProcessManager;
 use wmux_session_manager::Store;
 
@@ -48,13 +48,25 @@ fn main() {
             let _ = store.prune_history(10_000);
             let processes = Arc::new(ProcessManager::new());
             let store = Arc::new(Mutex::new(store));
-            // Remembers which Claude/Codex session runs in which terminal so it
-            // can be resumed after a restart.
-            let agent_scan_stop = match app.path().home_dir() {
-                Ok(home) => agents::start_scanner(Arc::clone(&processes), Arc::clone(&store), home),
+            // Watches for coding agents in terminals: shows them in the UI and
+            // remembers their sessions so they can be resumed after a restart.
+            let agents = match app.path().home_dir() {
+                Ok(home) => {
+                    let handle = app.handle().clone();
+                    agents::start_scanner(
+                        Arc::clone(&processes),
+                        Arc::clone(&store),
+                        home,
+                        move |live| {
+                            if let Err(e) = handle.emit("agents-changed", live) {
+                                log::warn!("could not publish agent state: {e}");
+                            }
+                        },
+                    )
+                }
                 Err(e) => {
-                    log::warn!("no home directory ({e}); agent sessions will not be resumed");
-                    Arc::default()
+                    log::warn!("no home directory ({e}); agents will not be detected");
+                    agents::Scanner::default()
                 }
             };
             app.manage(AppState {
@@ -62,7 +74,7 @@ fn main() {
                 store,
                 db: outcome,
                 data_dir,
-                agent_scan_stop,
+                agents,
             });
 
             // The window starts hidden to avoid a white flash; the frontend shows
@@ -85,7 +97,7 @@ fn main() {
                     let state = window.state::<AppState>();
                     // Stop the scan first so the agents killed below are not
                     // recorded as "exited" and forgotten.
-                    state.agent_scan_stop.store(true, Ordering::Relaxed);
+                    state.agents.stop.store(true, Ordering::Relaxed);
                     // Kill all terminal process trees on exit.
                     state.processes.shutdown_all();
                 }
@@ -103,6 +115,7 @@ fn main() {
             commands::pty_list,
             commands::session_load,
             commands::session_save,
+            commands::agents_get,
             commands::terminal_restore_get,
             commands::terminal_state_save,
             commands::settings_get,

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRightFromLine,
+  Bot,
   ChevronDown,
   ChevronUp,
   Columns2,
@@ -18,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import * as terminals from "../terminal/registry";
+import { ACTIVITY_LABEL, agentActivity, agentName } from "../state/agents";
 import { useStore } from "../state/store";
 import type { Pane, TerminalSurface, Workspace } from "../state/types";
 import { beginTabDrag } from "./tabDrag";
@@ -117,6 +119,9 @@ export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pan
 
 function Tab({ surface, pane, active, paneFocused }: { surface: TerminalSurface; pane: Pane; active: boolean; paneFocused: boolean }) {
   const rt = useStore((s) => s.runtime[surface.id]);
+  const agent = useStore((s) => s.agents[surface.id]);
+  const clock = useStore((s) => (agent && !agent.status ? s.clock : 0));
+  const activity = agent ? agentActivity(agent, rt?.outputAt, clock) : null;
   const profiles = useStore((s) => s.profiles);
   const [editing, setEditing] = useState(false);
   const st = useStore.getState;
@@ -152,7 +157,9 @@ function Tab({ surface, pane, active, paneFocused }: { surface: TerminalSurface;
         // Not while renaming, and not from the close button.
         if (!editing && !(e.target as HTMLElement).closest("button")) beginTabDrag(e, surface.id, surface.title);
       }}
-      title={`${surface.title}${rt?.cwd ? `\n${rt.cwd}` : ""}${rt?.pid ? `\nPID ${rt.pid}` : ""}`}
+      title={`${surface.title}${agent && activity ? `\n${agentName(agent.kind)} · ${ACTIVITY_LABEL[activity]}` : ""}${rt?.cwd ? `\n${rt.cwd}` : ""}${rt?.pid ? `\nPID ${rt.pid}` : ""}`}
+      data-agent={agent?.kind}
+      data-agent-activity={activity ?? undefined}
       onClick={() => st().setActiveSurface(pane.id, surface.id)}
       onDoubleClick={() => setEditing(true)}
       onAuxClick={(e) => {
@@ -164,15 +171,28 @@ function Tab({ surface, pane, active, paneFocused }: { surface: TerminalSurface;
         active ? (paneFocused ? "bg-active text-fg" : "bg-hover text-fg") : "text-muted hover:bg-hover hover:text-fg",
       )}
     >
-      <TerminalSquare
-        size={13}
-        className={cx(
-          "shrink-0",
-          status === "running" && "text-success",
-          status === "error" && "text-danger",
-          (status === "exited" || status === "idle" || status === "starting") && "text-faint",
-        )}
-      />
+      {agent && activity ? (
+        <Bot
+          size={14}
+          aria-label={`${agentName(agent.kind)}, ${ACTIVITY_LABEL[activity]}`}
+          className={cx(
+            "shrink-0",
+            activity === "working" && "animate-pulse text-accent",
+            activity === "waiting" && "text-warning",
+            activity === "idle" && "text-success",
+          )}
+        />
+      ) : (
+        <TerminalSquare
+          size={13}
+          className={cx(
+            "shrink-0",
+            status === "running" && "text-success",
+            status === "error" && "text-danger",
+            (status === "exited" || status === "idle" || status === "starting") && "text-faint",
+          )}
+        />
+      )}
       {editing ? (
         <TabRename surface={surface} onDone={() => setEditing(false)} />
       ) : (

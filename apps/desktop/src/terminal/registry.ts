@@ -49,6 +49,8 @@ interface Entry {
   savedCommand: string | null;
   /** Pending "the command finished" (see COMMAND_CLEAR_GRACE_MS). */
   clearTimer?: number;
+  /** When `runtime.outputAt` was last updated (throttle). */
+  outputMarkedAt: number;
 }
 
 const entries = new Map<string, Entry>();
@@ -143,6 +145,7 @@ function create(surfaceId: string): Entry {
     dirty: false,
     runningCommand: null,
     savedCommand: null,
+    outputMarkedAt: 0,
   };
 
   entry.disposables.push(
@@ -190,6 +193,13 @@ function create(surfaceId: string): Entry {
     }),
     term.onWriteParsed(() => {
       entry.dirty = true;
+      // For agents that do not report a status, output is the sign of work.
+      const agent = store().agents[surfaceId];
+      const now = Date.now();
+      if (agent && !agent.status && now - entry.outputMarkedAt > 1000) {
+        entry.outputMarkedAt = now;
+        store().setRuntime(surfaceId, { outputAt: now });
+      }
     }),
     term.parser.registerOscHandler(7, (data) => {
       const cwd = parseOsc7(data);

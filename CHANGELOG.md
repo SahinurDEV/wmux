@@ -5,6 +5,11 @@
 - **Drag tabs.** Drag a terminal tab onto another pane's tab strip to move it
   there, onto a side of a pane to split it off, or onto a workspace in the
   sidebar to send it to that workspace. The terminal keeps running.
+- **Agents are shown.** Wmux recognizes Claude Code, Codex, Gemini CLI,
+  OpenCode and Aider running in a terminal and marks the tab, the workspace in
+  the sidebar and the status bar with what the agent is doing: working,
+  waiting for you, or idle. Claude Code's own status is used; for the others,
+  recent terminal output counts as working.
 - **Move a pane to another workspace** from the pane menu.
 - **Swap panes** with `Ctrl+Alt+Shift+Arrow`.
 

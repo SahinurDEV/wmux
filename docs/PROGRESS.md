@@ -34,7 +34,7 @@ Legend: ✅ done and covered by tests · 🟡 implemented, awaiting first CI/E2E
 | Phase | Items | Status |
 | --- | --- | --- |
 | 3 | Drag & drop tabs/panes, move pane between workspaces, swap panes | ✅ `move.test.ts` (incl. randomized), `tests/e2e/dnd.mjs` |
-| 4 | Agent adapters (Claude Code, Codex, Gemini CLI, OpenCode, Aider), status detection | ⬜ |
+| 4 | Agent detection (Claude Code, Codex, Gemini CLI, OpenCode, Aider) and working/waiting/idle status | ✅ `agents.rs` and `agents.test.ts` unit tests, `tests/e2e/agents.mjs` |
 | 5 | WebView2 browser surfaces (native child controller), automation API | ⬜ |
 | 6 | Git panel, port monitoring, workspace search | ⬜ |
 | 7 | `wmux.exe` CLI, named-pipe JSON-RPC, event subscriptions | ⬜ |

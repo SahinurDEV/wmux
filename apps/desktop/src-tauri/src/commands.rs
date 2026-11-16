@@ -6,7 +6,6 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -26,8 +25,8 @@ pub struct AppState {
     pub store: Arc<Mutex<Store>>,
     pub db: OpenOutcome,
     pub data_dir: PathBuf,
-    /// Set to stop the agent session scan (before terminals are killed).
-    pub agent_scan_stop: Arc<AtomicBool>,
+    /// Background scan for coding agents running in terminals.
+    pub agents: crate::agents::Scanner,
 }
 
 /// Error returned to the frontend as `{ kind, message }`.
@@ -336,6 +335,18 @@ pub async fn session_load(state: State<'_, AppState>) -> CmdResult<SessionSnapsh
 #[tauri::command]
 pub async fn session_save(state: State<'_, AppState>, snapshot: SessionSnapshot) -> CmdResult<()> {
     Ok(lock_store(&state)?.save_snapshot(&snapshot)?)
+}
+
+/// Coding agents running in terminals right now, by surface id. Changes are
+/// also pushed as the `agents-changed` event.
+#[tauri::command]
+pub async fn agents_get(state: State<'_, AppState>) -> CmdResult<crate::agents::AgentMap> {
+    state
+        .agents
+        .live
+        .lock()
+        .map(|m| m.clone())
+        .map_err(|_| CmdError::new("internal", "agent state lock poisoned"))
 }
 
 /// What was saved for one terminal: scrollback, the agent session that was
