@@ -4,7 +4,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm --filter @wmux/desktop tauri dev --config src-tauri/tauri.dev.conf.json",
-    "build": "pnpm --filter @wmux/desktop tauri build",
+    "build": "pnpm --filter @wmux/desktop tauri build --config src-tauri/tauri.unsigned.conf.json",
     "test": "pnpm --filter @wmux/desktop test && cargo test --workspace",
     "test:e2e": "node tests/e2e/run.mjs",
     "test:e2e:restore": "node tests/e2e/restore.mjs",

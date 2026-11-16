@@ -70,6 +70,12 @@ function GeneralTab() {
       <Row label="Confirm before closing a workspace" description="Closing a workspace stops all of its terminal processes.">
         <Toggle label="Confirm close" checked={s.confirmCloseWorkspace} onChange={(v) => void updateSettings({ confirmCloseWorkspace: v })} />
       </Row>
+      <Row
+        label="Check for updates"
+        description="Looks for a new version when Wmux starts and a few times a day. Nothing is installed until you click the update button in the status bar."
+      >
+        <Toggle label="Check for updates" checked={s.checkForUpdates} onChange={(v) => void updateSettings({ checkForUpdates: v })} />
+      </Row>
       <p className="mt-4 text-xs text-muted">
         Wmux restores your workspaces, layouts, tabs and working directories on startup. Processes cannot survive an app
         restart or Windows shutdown; restored terminals start new shell sessions and say so.

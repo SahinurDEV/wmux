@@ -118,7 +118,17 @@ Development builds from every commit are available as artifacts on the
 2. `git tag vX.Y.Z && git push origin vX.Y.Z`
 
 The [release workflow](.github/workflows/release.yml) runs the tests, builds
-the installers, and publishes them with a portable ZIP and checksums.
+the installers, and publishes them with a portable ZIP and checksums. It also
+publishes `latest.json` and a signature for the installer; installed copies
+read these to update themselves.
+
+Updates are signed with a key pair made by `pnpm tauri signer generate`. The
+public key is in `tauri.conf.json` (`plugins.updater.pubkey`); the private key
+is the repository secret `TAURI_SIGNING_PRIVATE_KEY`. Keep a copy of the
+private key somewhere safe: installed copies only accept updates signed with
+it, so if it is lost they can never be updated in place again. Local and CI
+builds skip signing with `--config src-tauri/tauri.unsigned.conf.json`
+(`pnpm build` does this).
 
 ## Build from source
 
@@ -165,7 +175,7 @@ site/                     Website (landing page and docs), published to GitHub P
 | 5 | Embedded WebView2 browser and browser automation API | Planned |
 | 6 | Git panel, port monitoring, workspace search | Planned |
 | 7 | `wmux` CLI and named-pipe automation API | Planned |
-| 8-10 | Notifications, crash recovery, signing, auto-update, ARM64 | Planned |
+| 8-10 | Notifications, crash recovery, signing, ARM64 (in-app updates shipped in 0.4.0) | Planned |
 
 Details and per-item verification status: [docs/PROGRESS.md](docs/PROGRESS.md).
 

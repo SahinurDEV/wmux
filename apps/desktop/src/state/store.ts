@@ -3,6 +3,7 @@ import type { AgentInfo, AppInfo } from "../lib/ipc";
 import { leaf, newId, paneIds, removePane, resizeSplit, cloneLayout, splitPane, swapPanes } from "./layout";
 import { movePaneToWorkspace as movePaneAcross, moveSurface as moveSurfaceIn, type MoveTarget } from "./move";
 import { ACCENTS, DEFAULT_SETTINGS, type Settings } from "./settings";
+import type { UpdateState } from "./updates";
 import type {
   Pane,
   ShellProfile,
@@ -69,6 +70,8 @@ export interface AppStore {
   agents: Record<string, AgentInfo>;
   /** Wall clock, advanced periodically so "recent output" can go stale. */
   clock: number;
+  /** In-app update: what is on offer and how far along installing it is. */
+  update: UpdateState;
 
   // workspaces
   createWorkspace: (opts?: { name?: string; cwd?: string | null }) => string;
@@ -218,6 +221,7 @@ export const useStore = create<AppStore>((set, get) => {
     drag: null,
     agents: {},
     clock: Date.now(),
+    update: { status: "idle", info: null, progress: null },
 
     createWorkspace: (opts) => {
       const s = get();

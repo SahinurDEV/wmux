@@ -1,7 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-11-16): Updates from inside the app
 
+- **Wmux updates itself.** It looks for a new version on GitHub when it starts
+  and a few times a day. When there is one, an **Update to vX** button appears
+  in the status bar; clicking it downloads the new version, installs it and
+  restarts Wmux with your terminals restored. Nothing is installed without
+  that click.
+- Every update is checked against a signing key built into the app before it
+  runs.
+- Works for copies installed with the setup program (`*-setup.exe`). MSI and
+  portable copies are told about the new version and sent to the download
+  page.
+- **Check for Updates** in the command palette, and a switch for the automatic
+  check under Settings → General.
+- This is the first version that can update itself, so moving from 0.3.0 or
+  older to it is still a manual install.
 - Dependencies: lucide-react 1.70, winreg 0.56, base64 0.23.
 
 ## 0.3.0 (2026-11-16): Drag and drop, agent status

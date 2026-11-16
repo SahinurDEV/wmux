@@ -4,6 +4,7 @@
 mod agents;
 mod commands;
 mod shells;
+mod updates;
 
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
@@ -35,6 +36,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             // WMUX_DATA_DIR lets tests and portable installs keep data elsewhere.
             let data_dir = match std::env::var_os("WMUX_DATA_DIR") {
@@ -69,6 +71,7 @@ fn main() {
                     agents::Scanner::default()
                 }
             };
+            app.manage(updates::Pending::default());
             app.manage(AppState {
                 processes,
                 store,
@@ -76,6 +79,27 @@ fn main() {
                 data_dir,
                 agents,
             });
+
+            // The window is built here rather than from the config alone so
+            // that tests can ask the browser for a DevTools port. The
+            // environment variable WebView2 offers for this is not honored
+            // everywhere (it is ignored on GitHub's runners).
+            let window_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|w| w.label == "main")
+                .cloned()
+                .ok_or("no main window in tauri.conf.json")?;
+            let mut window = tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?;
+            if std::env::var_os("WMUX_E2E").is_some() {
+                // Setting any argument replaces the defaults, so they are repeated.
+                window = window.additional_browser_args(
+                    "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --remote-debugging-port=0",
+                );
+            }
+            window.build()?;
 
             // The window starts hidden to avoid a white flash; the frontend shows
             // it after the first paint. Safety net in case the frontend fails.
@@ -121,6 +145,9 @@ fn main() {
             commands::settings_get,
             commands::settings_set,
             commands::db_backup,
+            updates::update_check,
+            updates::update_download,
+            updates::update_install,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wmux");

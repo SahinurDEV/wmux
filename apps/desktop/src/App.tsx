@@ -13,6 +13,8 @@ import { errorMessage, ipc } from "./lib/ipc";
 import { focusedSurfaceId } from "./state/actions";
 import { commandById, effectiveBindings, eventToAccelerator, getCommands } from "./state/commands";
 import { flushSave, initPersistence } from "./state/persistence";
+import { checkForUpdates } from "./state/updateActions";
+import { CHECK_INTERVAL_MS } from "./state/updates";
 import { settingsFromStore } from "./state/settings";
 import { activeWorkspace, useStore } from "./state/store";
 import * as terminals from "./terminal/registry";
@@ -52,6 +54,14 @@ async function doBoot(): Promise<void> {
     const { agents } = useStore.getState();
     if (Object.values(agents).some((a) => !a.status)) useStore.setState({ clock: Date.now() });
   }, 1500);
+  // Updates: shortly after startup, then a few times a day while running.
+  if (!appInfo.e2e) {
+    const check = () => {
+      if (useStore.getState().settings.checkForUpdates) void checkForUpdates(false);
+    };
+    window.setTimeout(check, 5000);
+    window.setInterval(check, CHECK_INTERVAL_MS);
+  }
   if (appInfo.e2e) {
     Object.assign(window, {
       __wmuxTest: {

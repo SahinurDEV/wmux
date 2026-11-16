@@ -55,7 +55,8 @@ jobs:
 
       - name: Build installers (NSIS + MSI)
         working-directory: apps/desktop
-        run: pnpm tauri build
+        # Update signing needs the release key, which pull requests must not see.
+        run: pnpm tauri build --config src-tauri/tauri.unsigned.conf.json
 
       - name: Create portable ZIP
         shell: pwsh

@@ -40,4 +40,5 @@ Legend: ✅ done and covered by tests · 🟡 implemented, awaiting first CI/E2E
 | 7 | `wmux.exe` CLI, named-pipe JSON-RPC, event subscriptions | ⬜ |
 | 8 | Browser restoration, crash recovery UI (agent session recovery shipped in 0.2.0) | ⬜ |
 | 9 | Notifications (OSC 9/777, rings, badges, toasts), tray, a11y pass | ⬜ |
-| 10 | Code signing, auto-update, ARM64 | ⬜ |
+| 10 | In-app updates from GitHub releases (signed, NSIS installs) | 🟡 shipped in 0.4.0; `updates.test.ts` covers the UI state. The download-and-install step can only be exercised once a newer release than 0.4.0 exists |
+| 10 | Code signing, ARM64 | ⬜ |

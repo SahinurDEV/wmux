@@ -13,6 +13,7 @@ import {
   withFocusedTerminal,
 } from "./actions";
 import { activeWorkspace, useStore } from "./store";
+import { checkForUpdates } from "./updateActions";
 
 export interface Command {
   id: string;
@@ -67,6 +68,7 @@ const staticCommands: Command[] = [
   { id: "view.fontReset", title: "Reset Font Size", category: "View", defaultKey: "Ctrl+0", run: () => updateSettings({ fontSize: 13 }) },
   { id: "view.themeToggle", title: "Toggle Light / Dark Theme", category: "View", run: () => updateSettings({ theme: st().settings.theme === "light" ? "dark" : "light" }) },
   { id: "settings.open", title: "Open Settings", category: "Preferences", defaultKey: "Ctrl+,", run: () => st().setOverlay({ kind: "settings" }) },
+  { id: "app.checkForUpdates", title: "Check for Updates", category: "Preferences", run: () => checkForUpdates(true) },
   { id: "settings.keyboard", title: "Keyboard Shortcuts", category: "Preferences", run: () => st().setOverlay({ kind: "settings", tab: "keyboard" }) },
 
   ...Array.from({ length: 9 }, (_, i): Command => ({

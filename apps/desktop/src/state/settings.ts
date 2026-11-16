@@ -31,6 +31,8 @@ export interface Settings {
   copyOnSelect: boolean;
   gpuRendering: boolean;
   confirmCloseWorkspace: boolean;
+  /** Look for a new version at startup and a few times a day. */
+  checkForUpdates: boolean;
   customProfiles: CustomProfileSetting[];
   /** commandId -> accelerator string, overriding defaults ("" = unbound). */
   keybindings: Record<string, string>;
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   copyOnSelect: false,
   gpuRendering: true,
   confirmCloseWorkspace: true,
+  checkForUpdates: true,
   customProfiles: [],
   keybindings: {},
 };
@@ -77,6 +80,7 @@ const KEYS: Record<keyof Settings, string> = {
   copyOnSelect: "terminal.copyOnSelect",
   gpuRendering: "terminal.gpuRendering",
   confirmCloseWorkspace: "general.confirmCloseWorkspace",
+  checkForUpdates: "general.checkForUpdates",
   customProfiles: "terminal.customProfiles",
   keybindings: "keyboard.bindings",
 };
@@ -111,6 +115,7 @@ export function settingsFromStore(raw: Record<string, unknown>): Settings {
   s.copyOnSelect = bool(get("copyOnSelect")) ?? s.copyOnSelect;
   s.gpuRendering = bool(get("gpuRendering")) ?? s.gpuRendering;
   s.confirmCloseWorkspace = bool(get("confirmCloseWorkspace")) ?? s.confirmCloseWorkspace;
+  s.checkForUpdates = bool(get("checkForUpdates")) ?? s.checkForUpdates;
   const cp = get("customProfiles");
   if (Array.isArray(cp)) {
     s.customProfiles = cp

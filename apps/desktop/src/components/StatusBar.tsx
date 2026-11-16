@@ -1,7 +1,9 @@
-import { Bot, Circle, Folder, Layers, SquareTerminal } from "lucide-react";
+import { Bot, Circle, Download, Folder, Layers, SquareTerminal } from "lucide-react";
 import { focusedSurfaceId } from "../state/actions";
 import { ACTIVITY_LABEL, agentActivity, agentName } from "../state/agents";
 import { activeWorkspace, findSurface, useStore } from "../state/store";
+import { installUpdate } from "../state/updateActions";
+import { updateLabel } from "../state/updates";
 import { cx } from "./ui";
 
 export function StatusBar() {
@@ -19,6 +21,8 @@ export function StatusBar() {
   const running = Object.values(runtime).filter((r) => r.status === "running").length;
   const agent = useStore((s) => (surfaceId ? s.agents[surfaceId] : undefined));
   const clock = useStore((s) => s.clock);
+  const update = useStore((s) => s.update);
+  const updateText = updateLabel(update);
   const activity = agent ? agentActivity(agent, rt?.outputAt, clock) : null;
 
   let statusLabel = "No terminal";
@@ -84,6 +88,23 @@ export function StatusBar() {
         <Layers size={12} />
         {workspaces.length} workspace{workspaces.length === 1 ? "" : "s"}
       </span>
+      {updateText && update.info && (
+        <button
+          type="button"
+          data-update={update.status}
+          disabled={update.status !== "available"}
+          onClick={() => void installUpdate()}
+          title={
+            update.info.canInstall
+              ? "Download and install the new version. Wmux restarts and your terminals are restored."
+              : "This copy cannot update itself. Opens the download page."
+          }
+          className="flex shrink-0 items-center gap-1.5 rounded px-1.5 text-accent hover:bg-accent/15 disabled:hover:bg-transparent"
+        >
+          <Download size={12} />
+          {updateText}
+        </button>
+      )}
       {version && <span className="shrink-0 text-faint">v{version}</span>}
     </footer>
   );

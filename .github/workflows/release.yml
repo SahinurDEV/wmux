@@ -65,6 +65,9 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the in-app update (see "Publishing a release" in README.md). Without it the build fails.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
           tauriScript: pnpm tauri
@@ -88,6 +91,10 @@ jobs:
           releaseDraft: false
           # Not marked as pre-release so /releases/latest (the README download link) resolves.
           prerelease: false
+          # latest.json is what installed copies read to find an update; they
+          # were set up by the NSIS installer, so that is what it must point at.
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
 
       - name: Portable ZIP and checksums
         shell: pwsh

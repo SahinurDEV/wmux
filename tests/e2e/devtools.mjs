@@ -1,10 +1,11 @@
 // Shared by the end-to-end tests: start the app's WebView2 with remote
 // debugging on and find the DevTools endpoint to connect to.
 //
-// The browser picks a free port itself (`--remote-debugging-port=0`) and
-// writes it to a `DevToolsActivePort` file in its profile folder. A fixed
-// port can be taken or reserved on the machine (as on CI runners), in which
-// case the browser starts without any endpoint and says nothing.
+// With WMUX_E2E set, the app starts its browser with
+// `--remote-debugging-port=0`: the browser picks a free port and writes it to
+// a `DevToolsActivePort` file in its profile folder, which is read here. (The
+// app passes the flag itself because WebView2 ignores the
+// WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS variable on GitHub's runners.)
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -26,14 +27,13 @@ function portFiles(dir, depth = 2) {
 
 /**
  * Environment variables that give the app a private browser profile under
- * `dataDir` with remote debugging on. Call once per launch.
+ * `dataDir`. Call once per launch, together with WMUX_E2E.
  */
 export function devtoolsEnv(dataDir) {
   // A file left by the previous launch would point at a dead port.
   for (const file of portFiles(profileDir(dataDir))) rmSync(file, { force: true });
   return {
     WEBVIEW2_USER_DATA_FOLDER: profileDir(dataDir),
-    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: "--remote-debugging-port=0",
   };
 }
 

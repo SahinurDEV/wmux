@@ -142,6 +142,16 @@ export function decodePtyMessage(raw: unknown): PtyEvent | null {
   return null;
 }
 
+/** A newer version on offer. */
+export interface UpdateInfo {
+  version: string;
+  currentVersion: string;
+  notes: string | null;
+  /** False for MSI and portable copies, which are sent to the download page instead. */
+  canInstall: boolean;
+  downloadPage: string;
+}
+
 export const ipc = {
   appInfo: () => invoke<AppInfo>("app_info"),
   listShellProfiles: () => invoke<ShellProfile[]>("list_shell_profiles"),
@@ -172,4 +182,19 @@ export const ipc = {
   settingsGet: () => invoke<Record<string, unknown>>("settings_get"),
   settingsSet: (values: Record<string, unknown>) => invoke<void>("settings_set", { values }),
   dbBackup: () => invoke<string>("db_backup"),
+  /** The newer version on offer, or null when up to date (always null in development builds). */
+  updateCheck: () => invoke<UpdateInfo | null>("update_check"),
+  /** Downloads and verifies the update; `onProgress` gets a fraction from 0 to 1 when the size is known. */
+  updateDownload: async (onProgress: (fraction: number | null) => void): Promise<void> => {
+    const unlisten = await listen<{ downloaded: number; total: number | null }>("update-progress", (e) =>
+      onProgress(e.payload.total ? Math.min(1, e.payload.downloaded / e.payload.total) : null),
+    );
+    try {
+      await invoke<void>("update_download");
+    } finally {
+      unlisten();
+    }
+  },
+  /** Closes the terminals and starts the installer; the app exits. */
+  updateInstall: () => invoke<void>("update_install"),
 };
