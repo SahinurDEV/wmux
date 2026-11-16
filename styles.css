@@ -712,3 +712,143 @@ footer p {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------ animation */
+/* The `js` class is set in <head>, so content is only hidden for reveal when
+   the script that reveals it is going to run. */
+.js :where(.hero .wrap > *, .section-head, .card, .split > *, .table-scroll, .callout, .roadmap li, .final .wrap > *, section > .wrap > .fineprint) {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms);
+}
+.js .hero .shot {
+  transform: perspective(1600px) rotateX(9deg) translateY(36px) scale(0.97);
+  transform-origin: 50% 0;
+  transition-duration: 1.1s;
+}
+.js .in:where(.hero .wrap > *, .section-head, .card, .split > *, .table-scroll, .callout, .roadmap li, .final .wrap > *, section > .wrap > .fineprint) {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slow drift of the glow behind the hero. */
+.hero::before {
+  animation: drift 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes drift {
+  from {
+    transform: translate3d(-3%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) scale(1.1);
+  }
+}
+
+/* A terminal caret after the headline. */
+.hero h1 em::after {
+  content: "";
+  display: inline-block;
+  width: 0.34em;
+  height: 0.82em;
+  margin-left: 0.12em;
+  vertical-align: -0.06em;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: blink 1.15s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.pill b::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  vertical-align: 1px;
+  animation: pulse 2.2s ease-out infinite;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+.card {
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--elev);
+}
+.card .icon {
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.card:hover .icon {
+  transform: scale(1.08) rotate(-4deg);
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.split .shot {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.45s ease, border-color 0.45s ease;
+}
+.split .shot:hover {
+  transform: translateY(-6px) scale(1.012);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
+  box-shadow: 0 40px 110px rgb(0 0 0 / 0.7), 0 0 60px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.btn-primary {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.btn-primary:hover {
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+.btn svg {
+  transition: transform 0.2s ease;
+}
+.btn:hover svg {
+  transform: translateY(2px);
+}
+.roadmap li {
+  transition-property: opacity, transform, padding-left;
+}
+.roadmap li:hover {
+  padding-left: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js :where(.hero .wrap > *, .section-head, .card, .split > *, .table-scroll, .callout, .roadmap li, .final .wrap > *, section > .wrap > .fineprint),
+  .js .hero .shot {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hero::before,
+  .hero h1 em::after,
+  .pill b::before {
+    animation: none;
+  }
+  .card,
+  .card .icon,
+  .split .shot,
+  .btn svg {
+    transition: none;
+  }
+  .card:hover,
+  .card:hover .icon,
+  .split .shot:hover,
+  .btn:hover svg {
+    transform: none;
+  }
+}
