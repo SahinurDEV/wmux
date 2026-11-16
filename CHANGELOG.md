@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Dependencies: lucide-react 1.70, winreg 0.56, base64 0.23.
+
 ## 0.3.0 (2026-11-16): Drag and drop, agent status
 
 - **Drag tabs.** Drag a terminal tab onto another pane's tab strip to move it
