@@ -33,7 +33,7 @@ Legend: ✅ done and covered by tests · 🟡 implemented, awaiting first CI/E2E
 
 | Phase | Items | Status |
 | --- | --- | --- |
-| 3 | Drag & drop panes/tabs, move pane between workspaces, swap via UI | ⬜ (tree ops `swapPanes` exist and are tested) |
+| 3 | Drag & drop tabs/panes, move pane between workspaces, swap panes | ✅ `move.test.ts` (incl. randomized), `tests/e2e/dnd.mjs` |
 | 4 | Agent adapters (Claude Code, Codex, Gemini CLI, OpenCode, Aider), status detection | ⬜ |
 | 5 | WebView2 browser surfaces (native child controller), automation API | ⬜ |
 | 6 | Git panel, port monitoring, workspace search | ⬜ |

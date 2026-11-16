@@ -70,11 +70,14 @@ export function withFocusedTerminal(fn: (surfaceId: string) => void) {
   if (id) fn(id);
 }
 
-export function focusDirection(dir: "left" | "right" | "up" | "down") {
+type Direction = "left" | "right" | "up" | "down";
+
+/** The pane next to the focused one in a direction, judged by what is on screen. */
+function neighborPane(dir: Direction): string | null {
   const ws = activeWorkspace(st());
-  if (!ws || st().zoomedPaneId) return;
+  if (!ws || st().zoomedPaneId) return null;
   const current = document.querySelector<HTMLElement>(`[data-pane-id="${ws.focusedPaneId}"]`);
-  if (!current) return;
+  if (!current) return null;
   const a = current.getBoundingClientRect();
   const ax = a.left + a.width / 2;
   const ay = a.top + a.height / 2;
@@ -96,11 +99,24 @@ export function focusDirection(dir: "left" | "right" | "up" | "down") {
     const score = primary + secondary * 2;
     if (!best || score < best.score) best = { id, score };
   }
-  if (best) {
-    st().focusPane(best.id);
-    const surf = activeSurface(ws.panes.find((p) => p.id === best!.id));
-    if (surf) terminals.focus(surf.id);
-  }
+  return best?.id ?? null;
+}
+
+export function focusDirection(dir: Direction) {
+  const id = neighborPane(dir);
+  const ws = activeWorkspace(st());
+  if (!id || !ws) return;
+  st().focusPane(id);
+  const surf = activeSurface(ws.panes.find((p) => p.id === id));
+  if (surf) terminals.focus(surf.id);
+}
+
+/** Swap the focused pane with its neighbor in a direction; focus stays with the pane. */
+export function swapDirection(dir: Direction) {
+  const id = neighborPane(dir);
+  const ws = activeWorkspace(st());
+  if (!id || !ws?.focusedPaneId) return;
+  st().swapWithNeighbor(ws.focusedPaneId, id);
 }
 
 export async function backupDatabase(): Promise<void> {

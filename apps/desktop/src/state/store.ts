@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { AppInfo } from "../lib/ipc";
 import { leaf, newId, paneIds, removePane, resizeSplit, cloneLayout, splitPane, swapPanes } from "./layout";
+import { movePaneToWorkspace as movePaneAcross, moveSurface as moveSurfaceIn, type MoveTarget } from "./move";
 import { ACCENTS, DEFAULT_SETTINGS, type Settings } from "./settings";
 import type {
   Pane,
@@ -17,6 +18,17 @@ export type Overlay =
   | { kind: "settings"; tab?: string }
   | { kind: "workspace"; workspaceId: string }
   | null;
+
+/** A terminal tab being dragged, and where it would land if released now. */
+export interface TabDrag {
+  surfaceId: string;
+  title: string;
+  x: number;
+  y: number;
+  target: MoveTarget | null;
+  /** Screen rectangle to highlight for `target`. */
+  rect: { left: number; top: number; width: number; height: number } | null;
+}
 
 export interface Toast {
   id: string;
@@ -51,6 +63,8 @@ export interface AppStore {
   searchSurfaceId: string | null;
   renamingWorkspaceId: string | null;
   toasts: Toast[];
+  /** In-progress tab drag (not persisted). */
+  drag: TabDrag | null;
 
   // workspaces
   createWorkspace: (opts?: { name?: string; cwd?: string | null }) => string;
@@ -77,6 +91,11 @@ export interface AppStore {
   renameSurface: (surfaceId: string, title: string, custom: boolean) => void;
   setSurfaceCwd: (surfaceId: string, cwd: string) => void;
   setSurfaceProfile: (surfaceId: string, profileId: string | null) => void;
+  /** Move a tab to another pane, a new split, or another workspace. Its terminal keeps running. */
+  moveSurface: (surfaceId: string, target: MoveTarget) => boolean;
+  /** Move a pane with all its tabs into another workspace. */
+  movePaneToWorkspace: (paneId: string, workspaceId: string) => boolean;
+  setDrag: (drag: TabDrag | null) => void;
 
   // misc
   setRuntime: (surfaceId: string, patch: Partial<TerminalRuntime>) => void;
@@ -192,6 +211,7 @@ export const useStore = create<AppStore>((set, get) => {
     searchSurfaceId: null,
     renamingWorkspaceId: null,
     toasts: [],
+    drag: null,
 
     createWorkspace: (opts) => {
       const s = get();
@@ -450,6 +470,22 @@ export const useStore = create<AppStore>((set, get) => {
         })),
       }));
     },
+
+    moveSurface: (surfaceId, target) => {
+      const result = moveSurfaceIn(get().workspaces, surfaceId, target);
+      if (!result) return false;
+      set({ workspaces: result.workspaces, zoomedPaneId: null });
+      return true;
+    },
+
+    movePaneToWorkspace: (paneId, workspaceId) => {
+      const result = movePaneAcross(get().workspaces, paneId, workspaceId);
+      if (!result) return false;
+      set({ workspaces: result.workspaces, zoomedPaneId: null });
+      return true;
+    },
+
+    setDrag: (drag) => set({ drag }),
 
     setRuntime: (surfaceId, patch) =>
       set((s) => ({

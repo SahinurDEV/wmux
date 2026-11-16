@@ -164,8 +164,13 @@ async function main() {
 
   // Restart terminal keeps working.
   await page.click(`[data-surface-id="${first}"] .xterm-screen`);
+  const pidBefore = await state(page, `s.runtime[${JSON.stringify(first)}]?.pid`);
   await page.keyboard.press("Control+Shift+R");
-  await waitRunning(page, first);
+  // Wait for the new shell, not the old one that is still "running" for a moment.
+  await waitFor(
+    () => state(page, `(() => { const r = s.runtime[${JSON.stringify(first)}]; return r?.status === "running" && r.pid !== ${pidBefore}; })()`),
+    "restarted terminal to be a new process",
+  );
   await typeInTerminal(page, first, 'Write-Output ("after-" + "restart")');
   await waitFor(async () => (await terminalText(page, first)).includes("after-restart"), "output after restart");
   log("terminal restart works");

@@ -183,6 +183,7 @@ function WorkspaceItem({
       <div
         role="button"
         tabIndex={0}
+        data-workspace-id={ws.id}
         aria-current={active}
         draggable={!renaming}
         onDragStart={(e) => {

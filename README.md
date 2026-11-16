@@ -64,6 +64,7 @@ like cmux. It shares no code, branding or assets with them.
 | Split right / split down | `Ctrl+Shift+D` / `Ctrl+Shift+E` |
 | Maximize pane | `Ctrl+Shift+Enter` |
 | Focus pane in a direction | `Ctrl+Alt+Arrow` |
+| Swap pane with its neighbor | `Ctrl+Alt+Shift+Arrow` |
 | Search terminal output | `Ctrl+Shift+F` |
 | Restart terminal / clear | `Ctrl+Shift+R` / `Ctrl+Shift+K` |
 | Toggle sidebar | `Ctrl+Shift+B` |

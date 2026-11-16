@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ArrowRightFromLine,
   ChevronDown,
   ChevronUp,
   Columns2,
@@ -19,6 +20,7 @@ import {
 import * as terminals from "../terminal/registry";
 import { useStore } from "../state/store";
 import type { Pane, TerminalSurface, Workspace } from "../state/types";
+import { beginTabDrag } from "./tabDrag";
 import { IconButton, cx, useMenu, type MenuItem } from "./ui";
 
 export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pane; multi: boolean; zoomed?: boolean }) {
@@ -28,6 +30,7 @@ export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pan
   const st = useStore.getState;
   const menu = useMenu();
   const active = pane.surfaces.find((x) => x.id === pane.activeSurfaceId) ?? pane.surfaces[0];
+  const otherWorkspaces = useStore((s) => s.workspaces).filter((w) => w.id !== ws.id);
 
   const paneMenu: MenuItem[] = [
     { label: "New terminal tab", icon: <Plus size={13} />, hint: "Ctrl+Shift+T", onSelect: () => st().newTerminalTab(pane.id) },
@@ -40,6 +43,16 @@ export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pan
           { label: "Clear", icon: <Eraser size={13} />, hint: "Ctrl+Shift+K", onSelect: () => terminals.clear(active.id) },
           { label: "Restart", icon: <RotateCw size={13} />, hint: "Ctrl+Shift+R", onSelect: () => void terminals.restart(active.id) },
           { label: "Kill process tree", icon: <Skull size={13} />, onSelect: () => void terminals.kill(active.id) },
+          { separator: true, label: "" },
+        ]
+      : []),
+    ...(pane.surfaces.length > 0 && otherWorkspaces.length > 0
+      ? [
+          ...otherWorkspaces.map((w) => ({
+            label: `Move pane to ${w.name}`,
+            icon: <ArrowRightFromLine size={13} />,
+            onSelect: () => void st().movePaneToWorkspace(pane.id, w.id),
+          })),
           { separator: true, label: "" },
         ]
       : []),
@@ -58,7 +71,7 @@ export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pan
           multi && focused && "shadow-[inset_0_2px_0_var(--wm-accent)]",
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto" role="tablist">
+        <div data-tabstrip className="flex h-full min-w-0 flex-1 items-center gap-0.5 overflow-x-auto" role="tablist">
           {pane.surfaces.map((s) => (
             <Tab key={s.id} surface={s} pane={pane} active={s.id === active?.id} paneFocused={focused} />
           ))}
@@ -85,7 +98,7 @@ export function PaneView({ ws, pane, multi, zoomed }: { ws: Workspace; pane: Pan
         </IconButton>
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div data-pane-body className="relative min-h-0 flex-1">
         {active ? (
           <TerminalView
             key={active.id}
@@ -133,7 +146,12 @@ function Tab({ surface, pane, active, paneFocused }: { surface: TerminalSurface;
   return (
     <div
       role="tab"
+      data-tab-surface-id={surface.id}
       aria-selected={active}
+      onPointerDown={(e) => {
+        // Not while renaming, and not from the close button.
+        if (!editing && !(e.target as HTMLElement).closest("button")) beginTabDrag(e, surface.id, surface.title);
+      }}
       title={`${surface.title}${rt?.cwd ? `\n${rt.cwd}` : ""}${rt?.pid ? `\nPID ${rt.pid}` : ""}`}
       onClick={() => st().setActiveSurface(pane.id, surface.id)}
       onDoubleClick={() => setEditing(true)}

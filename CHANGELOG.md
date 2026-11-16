@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Drag tabs.** Drag a terminal tab onto another pane's tab strip to move it
+  there, onto a side of a pane to split it off, or onto a workspace in the
+  sidebar to send it to that workspace. The terminal keeps running.
+- **Move a pane to another workspace** from the pane menu.
+- **Swap panes** with `Ctrl+Alt+Shift+Arrow`.
+
 ## 0.2.0 (2026-11-16): Session restore across restarts
 
 Closing Wmux, or shutting down the PC, no longer loses what was in a terminal.

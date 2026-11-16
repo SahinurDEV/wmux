@@ -7,6 +7,7 @@ import * as terminals from "../terminal/registry";
 import {
   closeWorkspace,
   focusDirection,
+  swapDirection,
   openFolderAsWorkspace,
   updateSettings,
   withFocusedTerminal,
@@ -56,6 +57,10 @@ const staticCommands: Command[] = [
   { id: "pane.focusUp", title: "Focus Pane Up", category: "Pane", defaultKey: "Ctrl+Alt+ArrowUp", run: () => focusDirection("up") },
   { id: "pane.focusDown", title: "Focus Pane Down", category: "Pane", defaultKey: "Ctrl+Alt+ArrowDown", run: () => focusDirection("down") },
 
+  { id: "pane.swapLeft", title: "Swap Pane Left", category: "Pane", defaultKey: "Ctrl+Alt+Shift+ArrowLeft", run: () => swapDirection("left") },
+  { id: "pane.swapRight", title: "Swap Pane Right", category: "Pane", defaultKey: "Ctrl+Alt+Shift+ArrowRight", run: () => swapDirection("right") },
+  { id: "pane.swapUp", title: "Swap Pane Up", category: "Pane", defaultKey: "Ctrl+Alt+Shift+ArrowUp", run: () => swapDirection("up") },
+  { id: "pane.swapDown", title: "Swap Pane Down", category: "Pane", defaultKey: "Ctrl+Alt+Shift+ArrowDown", run: () => swapDirection("down") },
   { id: "view.toggleSidebar", title: "Toggle Sidebar", category: "View", defaultKey: "Ctrl+Shift+B", run: () => st().setUi({ sidebarCollapsed: !st().ui.sidebarCollapsed }) },
   { id: "view.fontBigger", title: "Increase Font Size", category: "View", defaultKey: "Ctrl+=", run: () => updateSettings({ fontSize: Math.min(32, st().settings.fontSize + 1) }) },
   { id: "view.fontSmaller", title: "Decrease Font Size", category: "View", defaultKey: "Ctrl+-", run: () => updateSettings({ fontSize: Math.max(8, st().settings.fontSize - 1) }) },

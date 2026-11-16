@@ -4,6 +4,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { Sidebar } from "./components/Sidebar";
 import { StatusBar } from "./components/StatusBar";
+import { TabDragOverlay } from "./components/tabDrag";
 import { TitleBar } from "./components/TitleBar";
 import { Toasts } from "./components/Toasts";
 import { WorkspaceSettingsDialog } from "./components/WorkspaceSettingsDialog";
@@ -158,6 +159,7 @@ export function App() {
       {overlay?.kind === "palette" && <CommandPalette initialQuery={overlay.initialQuery} />}
       {overlay?.kind === "settings" && <SettingsDialog initialTab={overlay.tab} />}
       {overlay?.kind === "workspace" && <WorkspaceSettingsDialog workspaceId={overlay.workspaceId} />}
+      <TabDragOverlay />
       <Toasts />
     </div>
   );
