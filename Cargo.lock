@@ -5322,7 +5322,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-conpty"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "thiserror 2.0.21",
  "windows-sys 0.61.2",
@@ -5330,7 +5330,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-desktop"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "log",
@@ -5354,7 +5354,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-process-manager"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "log",
  "serde",
@@ -5364,7 +5364,7 @@ dependencies = [
 
 [[package]]
 name = "wmux-session-manager"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "log",
  "rusqlite",

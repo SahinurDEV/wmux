@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (2026-11-16): Drag and drop, agent status
 
 - **Drag tabs.** Drag a terminal tab onto another pane's tab strip to move it
   there, onto a side of a pane to split it off, or onto a workspace in the

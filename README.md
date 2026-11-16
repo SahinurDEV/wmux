@@ -21,8 +21,8 @@ Workspaces · recursive split panes · real ConPTY shells · session restore
 
 ---
 
-> **Status: early development (v0.2).** Terminals, workspaces, splits and
-> session restore across restarts are implemented. AI agents, the embedded browser, Git,
+> **Status: early development (v0.3).** Terminals, workspaces, splits, drag and
+> drop, session restore across restarts and agent status are implemented. AI agents, the embedded browser, Git,
 > port monitoring and the `wmux` CLI are on the [roadmap](docs/PROGRESS.md).
 
 Wmux is an independent open-source project inspired by the workflow of tools
@@ -39,6 +39,12 @@ like cmux. It shares no code, branding or assets with them.
   drop). Each workspace has its own directory, shell, startup commands and environment.
 - **Split panes.** Nested horizontal/vertical splits, resizable, maximize/
   restore, directional focus, and terminal tabs in every pane.
+- **Agents at a glance.** Claude Code, Codex, Gemini CLI, OpenCode and Aider
+  are recognized when they run in a terminal. The tab, the workspace in the
+  sidebar and the status bar show whether the agent is working, waiting for
+  you, or idle.
+- **Drag and drop.** Drag a tab onto another pane, onto a side of a pane to
+  split it off, or onto a workspace in the sidebar. The terminal keeps running.
 - **Session restore that survives a reboot.** Workspaces, layouts, tabs and
   working directories come back, and so does each terminal's text. A Claude
   Code or Codex conversation that was open is resumed with the agent's own
@@ -90,7 +96,7 @@ changed under **Settings > Keyboard**.
 Every release includes `SHA256SUMS.txt`. Verify a download with:
 
 ```powershell
-Get-FileHash .\Wmux_0.2.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Wmux_0.3.0_x64-setup.exe -Algorithm SHA256
 ```
 
 **Requirements:** Windows 10 (1809+) or Windows 11, x64, and the Microsoft Edge
