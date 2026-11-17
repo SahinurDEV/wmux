@@ -17,16 +17,21 @@ use wmux_session_manager::Store;
 use commands::AppState;
 
 fn main() {
-    tauri::Builder::default()
-        // Must be first: a second launch focuses the existing window instead of
-        // opening a second instance that would fight over the database.
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+    let mut builder = tauri::Builder::default();
+    // Must be first: a second launch focuses the existing window instead of
+    // opening a second instance that would fight over the database. Test runs
+    // keep their data in their own folder, so they may run beside an installed
+    // copy.
+    if std::env::var_os("WMUX_E2E").is_none() {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
                 let _ = window.show();
                 let _ = window.set_focus();
             }
-        }))
+        }));
+    }
+    builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)

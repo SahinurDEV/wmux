@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 (2026-11-17): Installer icon
+
+- The setup program (`*-setup.exe`) now shows the Wmux logo in File Explorer
+  and on the taskbar while it runs. Before, it had the generic installer icon.
+- No change to the app itself. Copies of 0.4.0 installed with the setup
+  program are offered this version through the **Update** button.
+
 ## 0.4.0 (2026-11-16): Updates from inside the app
 
 - **Wmux updates itself.** It looks for a new version on GitHub when it starts
