@@ -14,6 +14,6 @@
     "typecheck": "pnpm --filter @wmux/desktop typecheck"
   },
   "devDependencies": {
-    "playwright-core": "^1.49.0"
+    "playwright-core": "^1.65.1"
   }
 }
